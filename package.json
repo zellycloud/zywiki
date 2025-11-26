@@ -1,0 +1,46 @@
+{
+  "name": "zellyy-docs",
+  "version": "0.1.0",
+  "description": "Code-Documentation Auto Sync CLI for Claude Code",
+  "type": "module",
+  "bin": {
+    "zy-docs": "./bin/zy-docs.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "templates"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "lint": "echo 'No linter configured yet'"
+  },
+  "keywords": [
+    "documentation",
+    "docs",
+    "sync",
+    "claude-code",
+    "ai",
+    "cli",
+    "markdown"
+  ],
+  "author": "Zellyy <hansoo@zellyy.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zellycloud/zellyy-docs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zellycloud/zellyy-docs/issues"
+  },
+  "homepage": "https://github.com/zellycloud/zellyy-docs#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  }
+}
