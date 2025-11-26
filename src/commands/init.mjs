@@ -6,7 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { saveConfig, saveMetadata, getDefaultConfig, getPaths } from '../core/metadata.mjs';
-import { setupClaudeCode } from '../integrations/claude-code.mjs';
+import { setupClaudeCode, setupClaudeCodeAuto } from '../integrations/claude-code.mjs';
 
 /**
  * Initialize documentation structure
@@ -67,8 +67,13 @@ export async function initCommand(options) {
 
   // Claude Code integration
   if (options.claude) {
-    await setupClaudeCode(cwd);
-    console.log('Configured Claude Code hooks');
+    if (options.auto) {
+      await setupClaudeCodeAuto(cwd);
+      console.log('Configured Claude Code hooks (auto mode)');
+    } else {
+      await setupClaudeCode(cwd);
+      console.log('Configured Claude Code hooks (manual mode)');
+    }
   }
 
   // Git hooks (future)

@@ -17,12 +17,13 @@ const program = new Command();
 program
   .name('zy-docs')
   .description('Code-Documentation Auto Sync CLI for Claude Code')
-  .version('0.1.0');
+  .version('0.1.1');
 
 program
   .command('init')
   .description('Initialize documentation structure in project')
   .option('--claude', 'Setup Claude Code hooks')
+  .option('--auto', 'Enable auto documentation update on session start (requires --claude)')
   .option('--git', 'Setup Git hooks')
   .option('--force', 'Overwrite existing configuration')
   .action(initCommand);

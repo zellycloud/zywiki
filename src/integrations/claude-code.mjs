@@ -131,6 +131,65 @@ ${endMarker}`;
 }
 
 /**
+ * Setup Claude Code hooks with AUTO mode
+ * Auto mode: automatically updates docs on session start
+ */
+export async function setupClaudeCodeAuto(projectRoot) {
+  // First setup the basic hooks
+  await setupClaudeCode(projectRoot);
+
+  // Then update CLAUDE.md with auto instructions
+  const claudeMdPath = path.join(projectRoot, 'CLAUDE.md');
+  updateClaudeMdAuto(claudeMdPath);
+
+  return true;
+}
+
+/**
+ * Update CLAUDE.md with AUTO sync instructions
+ */
+function updateClaudeMdAuto(claudeMdPath) {
+  const marker = '<!-- ZY-DOCS:START -->';
+  const endMarker = '<!-- ZY-DOCS:END -->';
+
+  const instructions = `${marker}
+# Auto Documentation Sync (zy-docs)
+
+**At session start**, check \`.zy-docs/pending.json\`:
+
+\`\`\`bash
+cat .zy-docs/pending.json 2>/dev/null
+\`\`\`
+
+**If pending updates exist, automatically execute:**
+1. Read each changed file listed in \`changedFiles\`
+2. Read each affected document listed in \`affectedDocs\`
+3. Update the documents to reflect code changes
+4. Ensure \`<cite>\` blocks have correct file references and line numbers
+5. Run \`zy-docs sync --clear\` when done
+
+This is AUTO mode - execute without asking for confirmation.
+${endMarker}`;
+
+  let content = '';
+  if (fs.existsSync(claudeMdPath)) {
+    content = fs.readFileSync(claudeMdPath, 'utf-8');
+  }
+
+  // Check if instructions already exist
+  if (content.includes(marker)) {
+    // Update existing
+    const regex = new RegExp(`${marker}[\\s\\S]*?${endMarker}`, 'g');
+    content = content.replace(regex, instructions);
+  } else {
+    // Append
+    content = content.trim() + '\n\n' + instructions + '\n';
+  }
+
+  fs.writeFileSync(claudeMdPath, content);
+}
+
+/**
  * Remove Claude Code integration
  */
 export async function removeClaudeCode(projectRoot) {
