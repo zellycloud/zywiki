@@ -7,6 +7,9 @@ import fs from 'fs';
 import path from 'path';
 import { saveConfig, saveMetadata, getDefaultConfig, getPaths } from '../core/metadata.mjs';
 import { setupClaudeCode, setupClaudeCodeAuto } from '../integrations/claude-code.mjs';
+import { askYesNo } from '../core/prompt.mjs';
+import { scanAndAddFiles } from './add.mjs';
+import { buildCommand } from './build.mjs';
 
 /**
  * Initialize documentation structure
@@ -104,8 +107,28 @@ export async function initCommand(options) {
   }
 
   console.log('\nInitialization complete!');
+
+  // Interactive: Ask to scan and build
+  const shouldScan = await askYesNo('\nWould you like to scan src/ and add files for tracking?');
+
+  if (shouldScan) {
+    console.log('\nScanning src/ for files...');
+    const addedCount = await scanAndAddFiles('src/', { recursive: true });
+    console.log(`Added ${addedCount} files for tracking.`);
+
+    if (addedCount > 0) {
+      const shouldBuild = await askYesNo('\nWould you like to generate documentation for all tracked files?');
+
+      if (shouldBuild) {
+        console.log('');
+        await buildCommand({ force: false });
+      }
+    }
+  }
+
   console.log('\nNext steps:');
-  console.log('  zy-docs add src/           # Add files to track');
+  console.log('  zy-docs add <path>         # Add more files to track');
+  console.log('  zy-docs build              # Generate docs for all tracked files');
   console.log('  zy-docs status             # Check status');
 }
 

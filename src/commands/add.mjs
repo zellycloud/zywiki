@@ -83,3 +83,24 @@ function addDirectory(dirPath, config, options) {
   walk(dirPath);
   return count;
 }
+
+/**
+ * Scan and add files (for use by init command)
+ */
+export async function scanAndAddFiles(targetPath, options = {}) {
+  const { root } = getPaths();
+  const config = loadConfig();
+  const fullPath = path.resolve(targetPath);
+
+  if (!fs.existsSync(fullPath)) {
+    return 0;
+  }
+
+  const stats = fs.statSync(fullPath);
+
+  if (stats.isDirectory()) {
+    return addDirectory(fullPath, config, options);
+  } else {
+    return addFile(fullPath, options) ? 1 : 0;
+  }
+}

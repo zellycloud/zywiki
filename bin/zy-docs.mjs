@@ -8,6 +8,7 @@ import { Command } from 'commander';
 import { initCommand } from '../src/commands/init.mjs';
 import { addCommand } from '../src/commands/add.mjs';
 import { generateCommand } from '../src/commands/generate.mjs';
+import { buildCommand } from '../src/commands/build.mjs';
 import { detectCommand } from '../src/commands/detect.mjs';
 import { statusCommand } from '../src/commands/status.mjs';
 import { syncCommand } from '../src/commands/sync.mjs';
@@ -17,7 +18,7 @@ const program = new Command();
 program
   .name('zy-docs')
   .description('Code-Documentation Auto Sync CLI for Claude Code')
-  .version('0.1.3');
+  .version('0.1.4');
 
 program
   .command('init')
@@ -42,6 +43,12 @@ program
   .option('--category <name>', 'Specify document category')
   .option('--title <title>', 'Specify document title')
   .action(generateCommand);
+
+program
+  .command('build')
+  .description('Generate documentation for all tracked files')
+  .option('--force', 'Overwrite existing documentation')
+  .action(buildCommand);
 
 program
   .command('detect')
