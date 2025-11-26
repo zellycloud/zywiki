@@ -14,7 +14,7 @@ import { setupClaudeCode, setupClaudeCodeAuto } from '../integrations/claude-cod
 export async function initCommand(options) {
   const cwd = process.cwd();
   const configDir = path.join(cwd, '.zy-docs');
-  const docsDir = path.join(cwd, 'docs');
+  const configPath = path.join(configDir, 'config.json');
 
   // Check if already initialized
   if (fs.existsSync(configDir) && !options.force) {
@@ -30,12 +30,29 @@ export async function initCommand(options) {
     console.log('Created .zy-docs/');
   }
 
-  // Create config.json
-  const config = getDefaultConfig();
+  // Load existing config or create new one
+  let config = getDefaultConfig();
+  let existingDocsDir = null;
+
+  if (fs.existsSync(configPath)) {
+    try {
+      const existingConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      existingDocsDir = existingConfig.docsDir;
+    } catch (e) {
+      // Ignore parse errors
+    }
+  }
+
+  // Determine docsDir: CLI option > existing config > default
+  const docsDirName = options.docsDir || existingDocsDir || config.docsDir;
+  config.docsDir = docsDirName;
   config.integrations.claudeCode = options.claude || false;
   config.integrations.git = options.git || false;
   saveConfig(config);
   console.log('Created .zy-docs/config.json');
+
+  // Use the determined docsDir
+  const docsDir = path.join(cwd, docsDirName);
 
   // Create metadata.json
   saveMetadata({
@@ -64,7 +81,7 @@ export async function initCommand(options) {
       fs.mkdirSync(dir, { recursive: true });
     }
   }
-  console.log('Created docs/ directory structure');
+  console.log(`Created ${docsDirName}/ directory structure`);
 
   // Create template files
   createTemplateFiles(docsDir);

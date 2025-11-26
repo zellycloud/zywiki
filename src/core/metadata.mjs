@@ -109,7 +109,7 @@ export function saveConfig(config) {
 export function getDefaultConfig() {
   return {
     version: '1.0.0',
-    docsDir: 'docs',
+    docsDir: 'zy-docs',
     sourcePatterns: ['src/**/*.{ts,tsx,js,jsx}', 'lib/**/*.ts'],
     ignorePatterns: ['**/*.test.ts', '**/*.spec.ts', '**/node_modules/**'],
     // 7 categories - all docs must be in a category

@@ -17,7 +17,7 @@ const program = new Command();
 program
   .name('zy-docs')
   .description('Code-Documentation Auto Sync CLI for Claude Code')
-  .version('0.1.2');
+  .version('0.1.3');
 
 program
   .command('init')
@@ -25,6 +25,7 @@ program
   .option('--claude', 'Setup Claude Code hooks')
   .option('--auto', 'Enable auto documentation update on session start (requires --claude)')
   .option('--git', 'Setup Git hooks')
+  .option('--docs-dir <path>', 'Documentation directory (default: zy-docs)')
   .option('--force', 'Overwrite existing configuration')
   .action(initCommand);
 
