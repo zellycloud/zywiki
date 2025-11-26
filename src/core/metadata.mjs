@@ -112,13 +112,53 @@ export function getDefaultConfig() {
     docsDir: 'docs',
     sourcePatterns: ['src/**/*.{ts,tsx,js,jsx}', 'lib/**/*.ts'],
     ignorePatterns: ['**/*.test.ts', '**/*.spec.ts', '**/node_modules/**'],
+    // 7 categories - all docs must be in a category
     categories: {
+      // architecture - 핵심 아키텍처
+      'src/agents/': 'architecture',
+      'src/lib/agent': 'architecture',
+
+      // features - 주요 기능
       'src/lib/': 'features',
       'src/components/': 'features',
       'src/hooks/': 'features',
+      'src/pages/': 'features',
+
+      // api - API 참조
       'src/api/': 'api',
-      'src/agents/': 'architecture',
+      'supabase/functions/': 'api',
+
+      // database - 데이터베이스 설계
+      'supabase/migrations/': 'database',
+      'src/types/supabase': 'database',
+
+      // deployment - 배포 및 운영
+      '.github/': 'deployment',
+      'docker/': 'deployment',
+
+      // security - 보안 아키텍처
+      'src/lib/auth': 'security',
+      'src/middleware/': 'security',
+
+      // testing - 테스트 전략
+      'tests/': 'testing',
+      '__tests__/': 'testing',
+      'e2e/': 'testing',
+
+      // guides - 가이드
+      'scripts/': 'guides',
     },
+    // Valid categories (no root-level docs allowed)
+    validCategories: [
+      'architecture',
+      'features',
+      'api',
+      'database',
+      'deployment',
+      'security',
+      'testing',
+      'guides',
+    ],
     integrations: {
       claudeCode: false,
       git: false,

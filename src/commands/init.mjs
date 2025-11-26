@@ -46,12 +46,17 @@ export async function initCommand(options) {
   });
   console.log('Created .zy-docs/metadata.json');
 
-  // Create docs directory structure
+  // Create docs directory structure (7 categories)
   const docsDirs = [
     docsDir,
-    path.join(docsDir, 'architecture'),
-    path.join(docsDir, 'features'),
-    path.join(docsDir, 'api'),
+    path.join(docsDir, 'architecture'),   // 핵심 아키텍처
+    path.join(docsDir, 'features'),       // 주요 기능
+    path.join(docsDir, 'api'),            // API 참조
+    path.join(docsDir, 'database'),       // 데이터베이스 설계
+    path.join(docsDir, 'deployment'),     // 배포 및 운영
+    path.join(docsDir, 'security'),       // 보안 아키텍처
+    path.join(docsDir, 'testing'),        // 테스트 전략
+    path.join(docsDir, 'guides'),         // 가이드 (용어집, 코딩 규칙 등)
   ];
 
   for (const dir of docsDirs) {
@@ -98,9 +103,14 @@ This documentation is managed by [zy-docs](https://github.com/zellycloud/zellyy-
 
 ## Categories
 
-- [Architecture](./architecture/) - System structure and design
-- [Features](./features/) - Feature documentation
-- [API](./api/) - API reference
+- [Architecture](./architecture/) - Core system architecture and design patterns
+- [Features](./features/) - Feature documentation and specifications
+- [API](./api/) - API reference and endpoints
+- [Database](./database/) - Database schema and data models
+- [Deployment](./deployment/) - Deployment guides and operations
+- [Security](./security/) - Security architecture and policies
+- [Testing](./testing/) - Test strategies and coverage
+- [Guides](./guides/) - Development guides, glossary, coding standards
 
 ## Quick Start
 

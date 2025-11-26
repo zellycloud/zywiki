@@ -31,6 +31,14 @@ export async function generateCommand(targetPath, options) {
 
   // Determine category
   const category = options.category || determineCategory(relativePath, config.categories);
+
+  // Validate category (no root-level docs allowed)
+  if (!isValidCategory(category, config)) {
+    console.error(`Invalid category: ${category}`);
+    console.error('Valid categories: architecture, features, api, database, deployment, security, testing, guides');
+    process.exit(1);
+  }
+
   const docsDir = path.join(root, config.docsDir, category);
 
   // Create docs directory if needed
@@ -69,7 +77,18 @@ function determineCategory(filePath, categories) {
       return category;
     }
   }
-  return 'features'; // Default
+  return 'features'; // Default - no root-level docs allowed
+}
+
+/**
+ * Validate category is allowed
+ */
+export function isValidCategory(category, config) {
+  const validCategories = config.validCategories || [
+    'architecture', 'features', 'api', 'database',
+    'deployment', 'security', 'testing', 'guides'
+  ];
+  return validCategories.includes(category);
 }
 
 /**
