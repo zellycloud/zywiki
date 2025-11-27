@@ -1,6 +1,6 @@
 {
   "name": "zywiki",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "AI-powered Code Wiki Generator for Claude Code",
   "type": "module",
   "bin": {

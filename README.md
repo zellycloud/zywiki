@@ -138,6 +138,11 @@ English, Español, Français, 日本語, 한국어, Português, Русский, 
 
 ## Changelog
 
+### v0.2.3
+- **New**: Auto-update `CLAUDE.md` with zywiki instructions on `init` and `update`
+- **New**: Added AI usage guide in `CLAUDE.md` for better AI assistant integration
+- **Improved**: Wiki structure documentation and commands reference
+
 ### v0.2.2
 - **Bug Fix**: Fixed glob pattern matching for `**/*.sql` and similar patterns
 - **Improved**: `zywiki update` now defaults to "No" for settings change prompt (just press Enter to skip)

@@ -9,6 +9,7 @@ import { loadConfig, saveConfig, getPaths } from '../core/metadata.mjs';
 import { askYesNo, askLanguage, askAIProvider, askAPIKey } from '../core/prompt.mjs';
 import { scanAndAddFiles } from './add.mjs';
 import { getTechStack } from '../core/detector.mjs';
+import { updateClaudeMdInstructions } from '../integrations/claude-code.mjs';
 
 /**
  * Update command - update existing zywiki configuration
@@ -162,6 +163,14 @@ export async function updateCommand(options = {}) {
         console.log('\nNo source directories detected.');
       }
     }
+  }
+
+  // Update CLAUDE.md with zywiki instructions
+  try {
+    updateClaudeMdInstructions(cwd);
+    console.log('\nUpdated CLAUDE.md with zywiki instructions');
+  } catch (err) {
+    // Ignore CLAUDE.md update errors
   }
 
   console.log('\nDone. Run "zywiki status" to check current status.');

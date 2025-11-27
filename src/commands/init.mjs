@@ -6,7 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { saveConfig, saveMetadata, getDefaultConfig, getPaths } from '../core/metadata.mjs';
-import { setupClaudeCode, setupClaudeCodeAuto } from '../integrations/claude-code.mjs';
+import { setupClaudeCode, setupClaudeCodeAuto, updateClaudeMdInstructions } from '../integrations/claude-code.mjs';
 import { askYesNo, askLanguage, askAIProvider, askAPIKey } from '../core/prompt.mjs';
 import { scanAndAddFiles } from './add.mjs';
 import { buildCommand } from './build.mjs';
@@ -144,6 +144,14 @@ export async function initCommand(options) {
   // Git hooks (future)
   if (options.git) {
     console.log('Git hooks: Not implemented yet');
+  }
+
+  // Always update CLAUDE.md with zywiki instructions
+  try {
+    updateClaudeMdInstructions(cwd);
+    console.log('Updated CLAUDE.md with zywiki instructions');
+  } catch (err) {
+    // Ignore CLAUDE.md update errors
   }
 
   console.log('\nInitialization complete!');
