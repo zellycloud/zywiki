@@ -13,7 +13,7 @@ export async function statusCommand() {
   const stats = getStats();
   const pending = loadPending();
 
-  console.log('\nzy-docs Status');
+  console.log('\nzywiki Status');
   console.log('==============');
   console.log(`Tracked files:    ${stats.snippets}`);
   console.log(`Documents:        ${stats.documents}`);

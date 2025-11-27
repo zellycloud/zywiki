@@ -44,14 +44,14 @@ export async function setupClaudeCode(projectRoot) {
     hooks: [
       {
         type: 'command',
-        command: 'npx zy-docs detect --quiet 2>/dev/null || true',
+        command: 'npx zywiki detect --quiet 2>/dev/null || true',
       },
     ],
   };
 
   // Check if hook already exists
   const hasPostToolUse = settings.hooks.PostToolUse.some(
-    h => h.hooks?.some(hh => hh.command?.includes('zy-docs detect'))
+    h => h.hooks?.some(hh => hh.command?.includes('zywiki detect'))
   );
 
   if (!hasPostToolUse) {
@@ -68,13 +68,13 @@ export async function setupClaudeCode(projectRoot) {
     hooks: [
       {
         type: 'command',
-        command: 'npx zy-docs sync 2>/dev/null || true',
+        command: 'npx zywiki sync 2>/dev/null || true',
       },
     ],
   };
 
   const hasSessionEnd = settings.hooks.SessionEnd.some(
-    h => h.hooks?.some(hh => hh.command?.includes('zy-docs sync'))
+    h => h.hooks?.some(hh => hh.command?.includes('zywiki sync'))
   );
 
   if (!hasSessionEnd) {
@@ -98,18 +98,18 @@ function updateClaudeMd(claudeMdPath) {
   const endMarker = '<!-- ZY-DOCS:END -->';
 
   const instructions = `${marker}
-# Auto Documentation Sync (zy-docs)
+# Auto Documentation Sync (zywiki)
 
 At session start, check for pending documentation updates:
 
 \`\`\`bash
-cat .zy-docs/pending.json 2>/dev/null
+cat .zywiki/pending.json 2>/dev/null
 \`\`\`
 
 If there are pending updates:
 1. Read the changed files listed
 2. Update the affected documents to match current code
-3. Run \`zy-docs sync --clear\` when done
+3. Run \`zywiki sync --clear\` when done
 ${endMarker}`;
 
   let content = '';
@@ -153,12 +153,12 @@ function updateClaudeMdAuto(claudeMdPath) {
   const endMarker = '<!-- ZY-DOCS:END -->';
 
   const instructions = `${marker}
-# Auto Documentation Sync (zy-docs)
+# Auto Documentation Sync (zywiki)
 
-**At session start**, check \`.zy-docs/pending.json\`:
+**At session start**, check \`.zywiki/pending.json\`:
 
 \`\`\`bash
-cat .zy-docs/pending.json 2>/dev/null
+cat .zywiki/pending.json 2>/dev/null
 \`\`\`
 
 **If pending updates exist, automatically execute:**
@@ -166,7 +166,7 @@ cat .zy-docs/pending.json 2>/dev/null
 2. Read each affected document listed in \`affectedDocs\`
 3. Update the documents to reflect code changes
 4. Ensure \`<cite>\` blocks have correct file references and line numbers
-5. Run \`zy-docs sync --clear\` when done
+5. Run \`zywiki sync --clear\` when done
 
 This is AUTO mode - execute without asking for confirmation.
 ${endMarker}`;
@@ -202,13 +202,13 @@ export async function removeClaudeCode(projectRoot) {
 
     if (settings.hooks?.PostToolUse) {
       settings.hooks.PostToolUse = settings.hooks.PostToolUse.filter(
-        h => !h.hooks?.some(hh => hh.command?.includes('zy-docs'))
+        h => !h.hooks?.some(hh => hh.command?.includes('zywiki'))
       );
     }
 
     if (settings.hooks?.SessionEnd) {
       settings.hooks.SessionEnd = settings.hooks.SessionEnd.filter(
-        h => !h.hooks?.some(hh => hh.command?.includes('zy-docs'))
+        h => !h.hooks?.some(hh => hh.command?.includes('zywiki'))
       );
     }
 

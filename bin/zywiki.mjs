@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * zy-docs CLI
- * Code-Documentation Auto Sync CLI for Claude Code
+ * zywiki CLI
+ * AI-powered Code Wiki Generator for Claude Code
  */
 
 import { Command } from 'commander';
@@ -16,43 +16,45 @@ import { syncCommand } from '../src/commands/sync.mjs';
 const program = new Command();
 
 program
-  .name('zy-docs')
-  .description('Code-Documentation Auto Sync CLI for Claude Code')
-  .version('0.1.4');
+  .name('zywiki')
+  .description('AI-powered Code Wiki Generator for Claude Code')
+  .version('0.1.0');
 
 program
   .command('init')
-  .description('Initialize documentation structure in project')
+  .description('Initialize wiki structure in project')
   .option('--claude', 'Setup Claude Code hooks')
-  .option('--auto', 'Enable auto documentation update on session start (requires --claude)')
+  .option('--auto', 'Enable auto wiki update on session start (requires --claude)')
   .option('--git', 'Setup Git hooks')
-  .option('--docs-dir <path>', 'Documentation directory (default: zy-docs)')
+  .option('--wiki-dir <path>', 'Wiki directory (default: zywiki)')
   .option('--force', 'Overwrite existing configuration')
   .action(initCommand);
 
 program
   .command('add <path>')
-  .description('Register files for documentation tracking')
+  .description('Register files for wiki tracking')
   .option('-r, --recursive', 'Add files recursively')
-  .option('--category <name>', 'Specify document category')
+  .option('--category <name>', 'Specify wiki category')
   .action(addCommand);
 
 program
   .command('generate <path>')
-  .description('Generate documentation template for file')
-  .option('--category <name>', 'Specify document category')
-  .option('--title <title>', 'Specify document title')
+  .description('Generate wiki template for file')
+  .option('--category <name>', 'Specify wiki category')
+  .option('--title <title>', 'Specify wiki title')
   .action(generateCommand);
 
 program
   .command('build')
-  .description('Generate documentation for all tracked files')
-  .option('--force', 'Overwrite existing documentation')
+  .description('Generate wiki with Claude AI')
+  .option('--force', 'Overwrite existing wiki pages')
+  .option('--filter <keyword>', 'Filter groups by keyword')
+  .option('--lang <code>', 'Language (ko, en, ja, zh, zh-tw, es, vi, pt-br, fr, ru)', 'ko')
   .action(buildCommand);
 
 program
   .command('detect')
-  .description('Detect changed files and affected documents')
+  .description('Detect changed files and affected wiki pages')
   .option('--output <file>', 'Output file path')
   .option('--quiet', 'Suppress output')
   .action(detectCommand);

@@ -1,10 +1,10 @@
 {
-  "name": "zellyy-docs",
-  "version": "0.1.4",
-  "description": "Code-Documentation Auto Sync CLI for Claude Code",
+  "name": "zywiki",
+  "version": "0.1.0",
+  "description": "AI-powered Code Wiki Generator for Claude Code",
   "type": "module",
   "bin": {
-    "zy-docs": "./bin/zy-docs.mjs"
+    "zywiki": "./bin/zywiki.mjs"
   },
   "exports": {
     ".": "./src/index.mjs"
@@ -19,11 +19,11 @@
     "lint": "echo 'No linter configured yet'"
   },
   "keywords": [
+    "wiki",
     "documentation",
-    "docs",
-    "sync",
-    "claude-code",
     "ai",
+    "claude-code",
+    "code-wiki",
     "cli",
     "markdown"
   ],
@@ -31,12 +31,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zellycloud/zellyy-docs.git"
+    "url": "git+https://github.com/zellycloud/zywiki.git"
   },
   "bugs": {
-    "url": "https://github.com/zellycloud/zellyy-docs/issues"
+    "url": "https://github.com/zellycloud/zywiki/issues"
   },
-  "homepage": "https://github.com/zellycloud/zellyy-docs#readme",
+  "homepage": "https://github.com/zellycloud/zywiki#readme",
   "engines": {
     "node": ">=18.0.0"
   },

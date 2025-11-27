@@ -1,6 +1,6 @@
 /**
  * detector.mjs
- * Change detection for zy-docs
+ * Change detection for zywiki
  */
 
 import fs from 'fs';

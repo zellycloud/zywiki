@@ -1,6 +1,6 @@
 /**
  * parser.mjs
- * File parsing utilities for zy-docs
+ * File parsing utilities for zywiki
  */
 
 import fs from 'fs';
@@ -204,7 +204,8 @@ function matchGlob(filePath, pattern) {
     .replace(/\*\*/g, '{{GLOBSTAR}}')
     .replace(/\*/g, '[^/]*')
     .replace(/{{GLOBSTAR}}/g, '.*')
-    .replace(/\{([^}]+)\}/g, '($1)');
+    // Convert {a,b,c} to (a|b|c)
+    .replace(/\{([^}]+)\}/g, (_, group) => `(${group.replace(/,/g, '|')})`);
 
   const regex = new RegExp(`^${regexPattern}$`);
   return regex.test(filePath);

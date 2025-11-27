@@ -1,18 +1,18 @@
 /**
  * metadata.mjs
- * Metadata management for zy-docs
+ * Metadata management for zywiki
  */
 
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-const CONFIG_DIR = '.zy-docs';
+const CONFIG_DIR = '.zywiki';
 const METADATA_FILE = 'metadata.json';
 const CONFIG_FILE = 'config.json';
 
 /**
- * Get project root (where .zy-docs exists)
+ * Get project root (where .zywiki exists)
  */
 export function getProjectRoot() {
   let dir = process.cwd();
@@ -109,8 +109,26 @@ export function saveConfig(config) {
 export function getDefaultConfig() {
   return {
     version: '1.0.0',
-    docsDir: 'zy-docs',
-    sourcePatterns: ['src/**/*.{ts,tsx,js,jsx}', 'lib/**/*.ts'],
+    docsDir: 'zywiki',
+    sourcePatterns: [
+      'src/**/*.{ts,tsx,js,jsx}',
+      'lib/**/*.{ts,tsx,js,jsx}',
+      'app/**/*.{ts,tsx,js,jsx}',
+      'pages/**/*.{ts,tsx,js,jsx}',
+      'components/**/*.{ts,tsx,js,jsx}',
+      'hooks/**/*.{ts,tsx,js,jsx}',
+      'utils/**/*.{ts,tsx,js,jsx}',
+      'services/**/*.{ts,tsx,js,jsx}',
+      'api/**/*.{ts,tsx,js,jsx}',
+      'server/**/*.{ts,tsx,js,jsx}',
+      'supabase/functions/**/*.ts',
+      'supabase/migrations/**/*.sql',
+      'prisma/**/*.prisma',
+      'scripts/**/*.{ts,tsx,js,jsx,mjs}',
+      'tests/**/*.{ts,tsx,js,jsx}',
+      '__tests__/**/*.{ts,tsx,js,jsx}',
+      'e2e/**/*.{ts,tsx,js,jsx}',
+    ],
     ignorePatterns: ['**/*.test.ts', '**/*.spec.ts', '**/node_modules/**'],
     // 7 categories - all docs must be in a category
     categories: {

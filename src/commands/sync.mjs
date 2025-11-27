@@ -56,7 +56,7 @@ function generatePrompt(pending) {
   lines.push('2. Update the affected documents to reflect the changes');
   lines.push('3. Ensure <cite> blocks have correct file references and line numbers');
   lines.push('4. Update function/class descriptions if signatures changed');
-  lines.push('5. Run `zy-docs sync --clear` when done');
+  lines.push('5. Run `zywiki sync --clear` when done');
   lines.push('');
   lines.push('='.repeat(60));
 

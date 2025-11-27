@@ -53,8 +53,10 @@ export async function generateCommand(targetPath, options) {
 
   // Check if document already exists
   if (fs.existsSync(docPath) && !options.force) {
-    console.log(`Document already exists: ${path.relative(root, docPath)}`);
-    console.log('Use --force to overwrite.');
+    if (!options.quiet) {
+      console.log(`Document already exists: ${path.relative(root, docPath)}`);
+      console.log('Use --force to overwrite.');
+    }
     return;
   }
 
@@ -65,7 +67,9 @@ export async function generateCommand(targetPath, options) {
   // Add to metadata
   addDocument(docPath, [relativePath]);
 
-  console.log(`Generated: ${path.relative(root, docPath)}`);
+  if (!options.quiet) {
+    console.log(`Generated: ${path.relative(root, docPath)}`);
+  }
 }
 
 /**

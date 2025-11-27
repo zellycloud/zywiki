@@ -1,5 +1,5 @@
 /**
- * zellyy-docs (zy-docs)
+ * zellyy-docs (zywiki)
  * Code-Documentation Auto Sync CLI for Claude Code
  */
 
