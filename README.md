@@ -5,10 +5,12 @@ AI-powered Code Wiki Generator - Generate documentation with Gemini (free) or Cl
 ## Features
 
 - **AI Documentation**: Generate comprehensive documentation using Gemini API (free) or Claude Code CLI
-- **Smart Grouping**: Automatically groups related files by folder structure and naming patterns
-- **Multi-language**: Support for 10 languages (English, Korean, Japanese, Chinese, etc.)
-- **Mermaid Diagrams**: Auto-generated architecture, data flow, and dependency diagrams
-- **Rate Limit Friendly**: Built-in 6.5s delay between API calls for Gemini free tier
+- **Tech Stack Detection**: Automatically detect frameworks, services, and integrations
+- **Multi-language Code Support**: JavaScript, TypeScript, Python, Go, Rust, Java, Swift, and more
+- **Smart Grouping**: Automatically groups related files by folder structure
+- **10 Output Languages**: English, Korean, Japanese, Chinese, Spanish, French, and more
+- **Mermaid Diagrams**: Auto-generated architecture and data flow diagrams
+- **Rate Limit Friendly**: Built-in delay between API calls for Gemini free tier
 
 ## Installation
 
@@ -22,14 +24,11 @@ npm install -g zywiki
 # Initialize in your project
 zywiki init
 
-# Select AI provider:
-# 1. Claude Code CLI (requires claude cli)
-# 2. Gemini API (free, requires GEMINI_API_KEY)
+# Analyze your tech stack
+zywiki stack
 
-# Select language (10 options available)
-
-# Scan and add source files
-# (Interactive prompts guide you through the process)
+# Generate documentation
+zywiki build
 ```
 
 ## Commands
@@ -38,46 +37,84 @@ zywiki init
 |---------|-------------|
 | `zywiki init` | Initialize documentation structure |
 | `zywiki add <path>` | Register files for tracking |
-| `zywiki build --prompt` | Generate AI documentation |
-| `zywiki generate <path>` | Generate doc for specific file |
+| `zywiki build` | Generate AI documentation |
+| `zywiki stack` | Analyze and display project tech stack |
+| `zywiki stack --save` | Save tech stack as markdown |
+| `zywiki status` | Show tracking status with tech summary |
 | `zywiki detect` | Detect changed files |
-| `zywiki status` | Show tracking status |
 | `zywiki sync` | Generate update prompt |
+| `zywiki update` | Update config and re-scan project |
+
+## Tech Stack Detection
+
+Automatically detects your project's frameworks and services:
+
+```bash
+zywiki stack
+```
+
+```
+Tech Stack Analysis
+===================
+
+[Languages]
+   TypeScript   [################----] 78.5% (142 files)
+   JavaScript   [###-----------------] 15.2% (28 files)
+
+[Frameworks & Libraries]
+   Frontend:
+      - Next.js: React framework with SSR/SSG support
+      - React: UI component library
+   State Management:
+      - TanStack Query: Async state management
+
+[Services & Integrations]
+   Database Services:
+      - Supabase: Open source Firebase alternative
+   AI/ML:
+      - OpenAI: AI language models
+
+[Summary]
+   Primary Language: TypeScript
+   Total Frameworks: 8
+   Total Services:   5
+```
+
+### Supported Languages
+JavaScript, TypeScript, Python, Go, Rust, Java, Kotlin, Swift, C/C++, Ruby, PHP, Shell
+
+### Detected Frameworks (~50)
+- **Frontend**: Next.js, React, Vue, Svelte, Angular
+- **Backend**: Express, FastAPI, Django, NestJS, Gin, Laravel
+- **Mobile**: React Native, Expo, Flutter, SwiftUI
+- **Testing**: Jest, Vitest, Playwright, Cypress
+- **ORM**: Prisma, Drizzle, TypeORM, Mongoose
+- **UI**: Tailwind CSS, shadcn/ui, Material UI
+
+### Detected Services (~80)
+- **Database**: Supabase, Firebase, PostgreSQL, MongoDB, Redis
+- **Auth**: Clerk, Auth0, NextAuth.js
+- **Payment**: Stripe, PayPal
+- **Hosting**: Vercel, AWS, Cloudflare
+- **AI**: OpenAI, Anthropic, Google AI, LangChain
+- **Monitoring**: Sentry, Datadog, PostHog
 
 ## AI Providers
 
-### Gemini API (Recommended - Free)
+### Gemini API (Free)
 
 ```bash
-# Set API key
 export GEMINI_API_KEY=your_key_here
-
-# Or enter during init
-zywiki init
-# Select: 2. Gemini API
+zywiki init  # Select: Gemini API
 ```
 
-Get your free API key at: https://aistudio.google.com/app/apikey
+Get your free API key: https://aistudio.google.com/app/apikey
 
 ### Claude Code CLI
 
-Requires Claude Code CLI installed and configured.
-
 ```bash
-zywiki init
-# Select: 1. Claude Code CLI
+zywiki init  # Select: Claude Code CLI
 ```
-
-## Generated Documentation
-
-Each generated document includes:
-
-- `<cite>` block with source file reference
-- Overview section (2-3 sentences)
-- Mermaid diagrams (architecture, data flow, dependencies)
-- Functions/classes documentation (list format)
-- Usage examples (1-2 code snippets)
-- Troubleshooting guide (2-3 common issues)
 
 ## Configuration
 
@@ -85,54 +122,40 @@ Each generated document includes:
 
 ```json
 {
-  "version": "1.0.0",
   "docsDir": "zywiki",
   "language": "ko",
   "ai": {
     "provider": "gemini",
-    "model": "gemini-2.5-flash",
-    "apiKey": null
+    "model": "gemini-2.5-flash"
   },
-  "sourcePatterns": ["src/**/*.{ts,tsx,js,jsx}"],
-  "ignorePatterns": ["**/*.test.ts", "**/node_modules/**"]
+  "sourcePatterns": ["src/**/*.{ts,tsx,js,jsx,mjs}"]
 }
 ```
 
-## Supported Languages
+## Output Languages
 
-1. English (en)
-2. Español (es)
-3. Français (fr)
-4. 日本語 (ja)
-5. 한국어 (ko)
-6. Português (pt-br)
-7. Русский (ru)
-8. Tiếng Việt (vi)
-9. 简体中文 (zh)
-10. 繁體中文 (zh-tw)
+English, Español, Français, 日本語, 한국어, Português, Русский, Tiếng Việt, 简体中文, 繁體中文
 
-## Example Output
+## Changelog
 
-```
-zywiki/
-├── architecture/
-│   ├── agents-BaseAgent.md
-│   ├── agents-MessageBus.md
-│   └── core-services.md
-├── features/
-│   ├── components-Button.md
-│   └── hooks-useAuth.md
-├── api/
-│   └── routes-users.md
-└── index.md
-```
+### v0.2.2
+- **Bug Fix**: Fixed glob pattern matching for `**/*.sql` and similar patterns
+- **Improved**: `zywiki update` now defaults to "No" for settings change prompt (just press Enter to skip)
+- **Improved**: API key is no longer re-requested if already configured
 
-## Rate Limiting
+### v0.2.1
+- Added `zywiki update` command for configuration changes
+- Auto-generate `overview.md` on init
+- Added Zellycloud credit
 
-For Gemini free tier:
-- 15 requests per minute
-- Built-in 6.5s delay between requests
-- Automatic retry on rate limit errors
+### v0.2.0
+- Added tech stack detection (`zywiki stack`)
+- Support for 12+ programming languages
+- Detect 50+ frameworks and 80+ services
+
+## Author
+
+Made with love by [Zellycloud](https://zellyy.com)
 
 ## License
 

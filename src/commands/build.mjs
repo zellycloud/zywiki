@@ -87,18 +87,18 @@ export async function buildCommand(options) {
       fs.mkdirSync(docsDir, { recursive: true });
     }
 
+    const prompt = generateDocPrompt(group, { root, language: options.lang || config.language || 'en' });
+    const startTime = Date.now();
+
+    // Progress spinner
+    const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    let spinIdx = 0;
+    const interval = setInterval(() => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+      process.stdout.write(`\r  ${spinner[spinIdx++ % spinner.length]} Generating... ${elapsed}s`);
+    }, 100);
+
     try {
-      const prompt = generateDocPrompt(group, { root, language: options.lang || config.language || 'en' });
-      const startTime = Date.now();
-
-      // Progress spinner
-      const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-      let spinIdx = 0;
-      const interval = setInterval(() => {
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
-        process.stdout.write(`\r  ${spinner[spinIdx++ % spinner.length]} Generating... ${elapsed}s`);
-      }, 100);
-
       // Call AI provider
       let content;
       if (provider === 'gemini') {

@@ -5,6 +5,9 @@
  */
 
 import { Command } from 'commander';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { initCommand } from '../src/commands/init.mjs';
 import { addCommand } from '../src/commands/add.mjs';
 import { generateCommand } from '../src/commands/generate.mjs';
@@ -12,13 +15,19 @@ import { buildCommand } from '../src/commands/build.mjs';
 import { detectCommand } from '../src/commands/detect.mjs';
 import { statusCommand } from '../src/commands/status.mjs';
 import { syncCommand } from '../src/commands/sync.mjs';
+import { stackCommand } from '../src/commands/stack.mjs';
+import { updateCommand } from '../src/commands/update.mjs';
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
 
 const program = new Command();
 
 program
   .name('zywiki')
   .description('AI-powered Code Wiki Generator for Claude Code')
-  .version('0.1.0');
+  .version(pkg.version);
 
 program
   .command('init')
@@ -70,5 +79,21 @@ program
   .option('--format <format>', 'Output format (prompt|json)', 'prompt')
   .option('--clear', 'Clear pending updates after sync')
   .action(syncCommand);
+
+program
+  .command('stack')
+  .description('Analyze and display project tech stack')
+  .option('--save', 'Save tech stack documentation to zywiki/architecture/')
+  .option('--output <file>', 'Custom output path for markdown')
+  .action(stackCommand);
+
+program
+  .command('update')
+  .description('Update configuration and re-scan project')
+  .option('--provider <name>', 'Set AI provider (gemini, claude)')
+  .option('--lang <code>', 'Set output language (ko, en, ja, etc.)')
+  .option('--docs-dir <path>', 'Set documentation directory')
+  .option('--scan', 'Re-scan source directories')
+  .action(updateCommand);
 
 program.parse();

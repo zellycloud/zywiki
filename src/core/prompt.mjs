@@ -6,20 +6,29 @@
 import readline from 'readline';
 
 /**
- * Ask a yes/no question (default: Y)
+ * Ask a yes/no question
+ * @param {string} question - The question to ask
+ * @param {boolean} defaultYes - If true, default is Y; if false, default is N (default: true)
  */
-export function askYesNo(question) {
+export function askYesNo(question, defaultYes = true) {
   return new Promise((resolve) => {
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
-    rl.question(`${question} (Y/n): `, (answer) => {
+    const prompt = defaultYes ? `${question} (Y/n): ` : `${question} (y/N): `;
+
+    rl.question(prompt, (answer) => {
       rl.close();
-      // Default is Y (empty string or 'y' or 'yes')
       const trimmed = answer.trim().toLowerCase();
-      resolve(trimmed === '' || trimmed === 'y' || trimmed === 'yes');
+      if (defaultYes) {
+        // Default is Y (empty string or 'y' or 'yes')
+        resolve(trimmed === '' || trimmed === 'y' || trimmed === 'yes');
+      } else {
+        // Default is N (only 'y' or 'yes' returns true)
+        resolve(trimmed === 'y' || trimmed === 'yes');
+      }
     });
   });
 }

@@ -111,60 +111,162 @@ export function getDefaultConfig() {
     version: '1.0.0',
     docsDir: 'zywiki',
     sourcePatterns: [
-      'src/**/*.{ts,tsx,js,jsx}',
-      'lib/**/*.{ts,tsx,js,jsx}',
-      'app/**/*.{ts,tsx,js,jsx}',
-      'pages/**/*.{ts,tsx,js,jsx}',
-      'components/**/*.{ts,tsx,js,jsx}',
-      'hooks/**/*.{ts,tsx,js,jsx}',
-      'utils/**/*.{ts,tsx,js,jsx}',
-      'services/**/*.{ts,tsx,js,jsx}',
-      'api/**/*.{ts,tsx,js,jsx}',
-      'server/**/*.{ts,tsx,js,jsx}',
+      // JavaScript/TypeScript (Web & Node.js)
+      'src/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'lib/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'app/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'pages/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'components/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'hooks/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'utils/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'services/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'api/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'server/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'bin/**/*.{js,mjs,cjs}',
+      'scripts/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'tests/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      '__tests__/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+      'e2e/**/*.{ts,tsx,js,jsx,mjs,cjs}',
+
+      // Python
+      'src/**/*.py',
+      'lib/**/*.py',
+      'app/**/*.py',
+      'api/**/*.py',
+      'services/**/*.py',
+      'utils/**/*.py',
+      'tests/**/*.py',
+      'scripts/**/*.py',
+
+      // Go
+      'cmd/**/*.go',
+      'pkg/**/*.go',
+      'internal/**/*.go',
+      'api/**/*.go',
+
+      // Rust
+      'src/**/*.rs',
+      'lib/**/*.rs',
+
+      // Java/Kotlin (Android, Spring)
+      'src/**/*.{java,kt,kts}',
+      'app/**/*.{java,kt,kts}',
+
+      // Swift (iOS/macOS)
+      'Sources/**/*.swift',
+      'App/**/*.swift',
+
+      // C/C++
+      'src/**/*.{c,cpp,cc,cxx,h,hpp}',
+      'lib/**/*.{c,cpp,cc,cxx,h,hpp}',
+      'include/**/*.{h,hpp}',
+
+      // Ruby
+      'app/**/*.rb',
+      'lib/**/*.rb',
+      'spec/**/*.rb',
+
+      // PHP
+      'src/**/*.php',
+      'app/**/*.php',
+      'lib/**/*.php',
+
+      // Shell scripts
+      'bin/**/*.sh',
+      'scripts/**/*.sh',
+
+      // Database & Config
       'supabase/functions/**/*.ts',
       'supabase/migrations/**/*.sql',
+      'migrations/**/*.sql',
       'prisma/**/*.prisma',
-      'scripts/**/*.{ts,tsx,js,jsx,mjs}',
-      'tests/**/*.{ts,tsx,js,jsx}',
-      '__tests__/**/*.{ts,tsx,js,jsx}',
-      'e2e/**/*.{ts,tsx,js,jsx}',
+
+      // Infrastructure
+      '**/*.tf',
+      '**/*.tfvars',
+      'docker/**/*.{yml,yaml}',
+      'k8s/**/*.{yml,yaml}',
+      '.github/workflows/**/*.{yml,yaml}',
     ],
-    ignorePatterns: ['**/*.test.ts', '**/*.spec.ts', '**/node_modules/**'],
-    // 7 categories - all docs must be in a category
+    ignorePatterns: [
+      // Test files
+      '**/*.test.{ts,tsx,js,jsx,py,go,rs}',
+      '**/*.spec.{ts,tsx,js,jsx,rb}',
+      '**/*_test.{go,py}',
+      // Dependencies & build
+      '**/node_modules/**',
+      '**/vendor/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/target/**',
+      '**/__pycache__/**',
+      // Generated files
+      '**/*.min.js',
+      '**/*.generated.*',
+      '**/generated/**',
+    ],
+    // 8 categories - all docs must be in a category
     categories: {
       // architecture - 핵심 아키텍처
       'src/agents/': 'architecture',
       'src/lib/agent': 'architecture',
+      'cmd/': 'architecture',           // Go main commands
+      'internal/': 'architecture',      // Go internal packages
+      'pkg/': 'architecture',           // Go public packages
 
       // features - 주요 기능
       'src/lib/': 'features',
       'src/components/': 'features',
       'src/hooks/': 'features',
       'src/pages/': 'features',
+      'app/': 'features',               // Next.js app dir, Rails, Laravel
+      'pages/': 'features',             // Next.js pages dir
+      'lib/': 'features',               // General library code
+      'utils/': 'features',
+      'services/': 'features',
+      'Sources/': 'features',           // Swift
 
       // api - API 참조
       'src/api/': 'api',
+      'api/': 'api',
       'supabase/functions/': 'api',
+      'routes/': 'api',                 // Express routes
+      'controllers/': 'api',            // MVC controllers
 
       // database - 데이터베이스 설계
       'supabase/migrations/': 'database',
+      'migrations/': 'database',
+      'prisma/': 'database',
       'src/types/supabase': 'database',
+      'models/': 'database',            // ORM models
+      'entities/': 'database',          // TypeORM entities
+      'schemas/': 'database',           // GraphQL/DB schemas
 
       // deployment - 배포 및 운영
       '.github/': 'deployment',
       'docker/': 'deployment',
+      'k8s/': 'deployment',
+      'terraform/': 'deployment',
+      'infra/': 'deployment',
+      'deploy/': 'deployment',
 
       // security - 보안 아키텍처
       'src/lib/auth': 'security',
       'src/middleware/': 'security',
+      'middleware/': 'security',
+      'auth/': 'security',
 
       // testing - 테스트 전략
       'tests/': 'testing',
       '__tests__/': 'testing',
       'e2e/': 'testing',
+      'spec/': 'testing',               // Ruby RSpec
+      'test/': 'testing',               // Go, Java convention
 
       // guides - 가이드
       'scripts/': 'guides',
+      'bin/': 'guides',
+      'tools/': 'guides',
     },
     // Valid categories (no root-level docs allowed)
     validCategories: [

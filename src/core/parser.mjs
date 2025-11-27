@@ -198,15 +198,30 @@ export function matchesPattern(filePath, patterns, ignorePatterns = []) {
  * Simple glob matching
  */
 function matchGlob(filePath, pattern) {
-  // Convert glob to regex
-  const regexPattern = pattern
-    .replace(/\./g, '\\.')
-    .replace(/\*\*/g, '{{GLOBSTAR}}')
-    .replace(/\*/g, '[^/]*')
-    .replace(/{{GLOBSTAR}}/g, '.*')
-    // Convert {a,b,c} to (a|b|c)
-    .replace(/\{([^}]+)\}/g, (_, group) => `(${group.replace(/,/g, '|')})`);
+  // Step 1: Handle brace expansion {a,b,c} BEFORE escaping
+  let processed = pattern.replace(/\{([^}]+)\}/g, (_, group) => `\x00BRACE:${group}\x00`);
 
-  const regex = new RegExp(`^${regexPattern}$`);
+  // Step 2: Escape special regex chars
+  processed = processed.replace(/[.+^$|[\]\\]/g, '\\$&');
+
+  // Step 3: Restore brace expansion as regex alternation
+  processed = processed.replace(/\x00BRACE:([^\x00]+)\x00/g, (_, group) => `(${group.split(',').join('|')})`);
+
+  // Step 4: Handle glob patterns (use placeholders to avoid conflicts)
+  // **/ at start or middle -> zero or more directories (including direct match)
+  processed = processed.replace(/\*\*\//g, '\x00GLOBSTARSLASH\x00');
+  // /** at end -> anything after
+  processed = processed.replace(/\/\*\*$/g, '\x00SLASHGLOBSTAR\x00');
+  // ** alone -> anything
+  processed = processed.replace(/\*\*/g, '\x00GLOBSTAR\x00');
+  // * -> anything except /
+  processed = processed.replace(/\*/g, '[^/]*');
+
+  // Step 5: Replace placeholders with actual regex
+  processed = processed.replace(/\x00GLOBSTARSLASH\x00/g, '(?:.*/)?');
+  processed = processed.replace(/\x00SLASHGLOBSTAR\x00/g, '(?:/.*)?');
+  processed = processed.replace(/\x00GLOBSTAR\x00/g, '.*');
+
+  const regex = new RegExp(`^${processed}$`);
   return regex.test(filePath);
 }

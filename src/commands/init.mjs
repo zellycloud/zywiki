@@ -10,6 +10,7 @@ import { setupClaudeCode, setupClaudeCodeAuto } from '../integrations/claude-cod
 import { askYesNo, askLanguage, askAIProvider, askAPIKey } from '../core/prompt.mjs';
 import { scanAndAddFiles } from './add.mjs';
 import { buildCommand } from './build.mjs';
+import { getTechStack, saveOverview } from '../core/detector.mjs';
 
 /**
  * Initialize documentation structure
@@ -21,7 +22,10 @@ export async function initCommand(options) {
 
   // Check if already initialized
   if (fs.existsSync(configDir) && !options.force) {
-    console.log('Project already initialized. Use --force to reinitialize.');
+    console.log('zywiki is already initialized in this project.');
+    console.log('');
+    console.log('Use "zywiki update" to change settings or re-scan files.');
+    console.log('Use "zywiki init --force" to completely reinitialize.');
     return;
   }
 
@@ -124,9 +128,7 @@ export async function initCommand(options) {
   }
   console.log(`\nCreated ${docsDirName}/ directory structure`);
 
-  // Create template files
-  createTemplateFiles(docsDir);
-  console.log('Created template documentation files');
+  // Template files removed - AI generates all documentation
 
   // Claude Code integration
   if (options.claude) {
@@ -145,6 +147,51 @@ export async function initCommand(options) {
   }
 
   console.log('\nInitialization complete!');
+
+  // Show tech stack summary
+  try {
+    const techStack = await getTechStack();
+    if (techStack.summary.totalFrameworks > 0 || techStack.summary.totalServices > 0) {
+      console.log('\n--- Tech Stack Detected ---');
+
+      if (techStack.languages.length > 0) {
+        const topLangs = techStack.languages.slice(0, 3).map(l => l.name).join(', ');
+        console.log(`  Languages:   ${topLangs}`);
+      }
+
+      if (techStack.summary.totalFrameworks > 0) {
+        // Get framework names
+        const frameworkNames = Object.values(techStack.frameworks)
+          .flat()
+          .slice(0, 5)
+          .map(f => f.name)
+          .join(', ');
+        console.log(`  Frameworks:  ${frameworkNames}${techStack.summary.totalFrameworks > 5 ? ` (+${techStack.summary.totalFrameworks - 5} more)` : ''}`);
+      }
+
+      if (techStack.summary.totalServices > 0) {
+        const serviceNames = Object.values(techStack.services)
+          .flat()
+          .slice(0, 5)
+          .map(s => s.name)
+          .join(', ');
+        console.log(`  Services:    ${serviceNames}${techStack.summary.totalServices > 5 ? ` (+${techStack.summary.totalServices - 5} more)` : ''}`);
+      }
+
+      console.log('\nRun "zywiki stack" for detailed analysis');
+      console.log('Run "zywiki stack --save" to save as documentation');
+
+      // Generate overview.md
+      try {
+        await saveOverview({ docsDir: docsDirName, language });
+        console.log(`\nGenerated ${docsDirName}/overview.md`);
+      } catch (err) {
+        // Ignore overview generation errors
+      }
+    }
+  } catch (e) {
+    // Ignore tech stack errors during init
+  }
 
   // Detect source directories in codebase
   const sourceDirs = detectSourceDirectories(cwd);
@@ -329,46 +376,4 @@ function detectSourceDirectories(cwd) {
   return detected;
 }
 
-/**
- * Create template documentation files
- */
-function createTemplateFiles(docsDir) {
-  // docs/index.md
-  const indexContent = `# Project Documentation
-
-This documentation is managed by [zywiki](https://github.com/zellycloud/zellyy-docs).
-
-## Categories
-
-- [Architecture](./architecture/) - Core system architecture and design patterns
-- [Features](./features/) - Feature documentation and specifications
-- [API](./api/) - API reference and endpoints
-- [Database](./database/) - Database schema and data models
-- [Deployment](./deployment/) - Deployment guides and operations
-- [Security](./security/) - Security architecture and policies
-- [Testing](./testing/) - Test strategies and coverage
-- [Guides](./guides/) - Development guides, glossary, coding standards
-
-## Quick Start
-
-\`\`\`bash
-# Check documentation status
-zywiki status
-
-# Add files to track
-zywiki add src/lib/myService.ts
-
-# Generate documentation
-zywiki generate src/lib/myService.ts
-
-# Detect changes
-zywiki detect
-\`\`\`
-`;
-
-  // Write index.md only
-  const indexPath = path.join(docsDir, 'index.md');
-  if (!fs.existsSync(indexPath)) {
-    fs.writeFileSync(indexPath, indexContent);
-  }
-}
+// Template files removed - AI generates all documentation via build command
