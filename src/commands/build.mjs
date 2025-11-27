@@ -124,6 +124,7 @@ export async function buildCommand(options) {
         await new Promise(r => setTimeout(r, 6500)); // 6.5 sec delay
       }
     } catch (error) {
+      clearInterval(interval);
       console.log(`\r  ✗ Error: ${error.message}                    `);
       errors++;
 

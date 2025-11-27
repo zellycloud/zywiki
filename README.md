@@ -30,9 +30,6 @@ zywiki init
 
 # Scan and add source files
 # (Interactive prompts guide you through the process)
-
-# Generate documentation with AI
-zywiki build --prompt
 ```
 
 ## Commands

@@ -64,6 +64,15 @@ export async function callGeminiAPI(prompt, options = {}) {
     throw new Error('Response blocked by safety filter');
   }
 
+  // Handle empty content with STOP (Gemini sometimes returns empty parts)
+  if (data.candidates && data.candidates[0]?.finishReason === 'STOP') {
+    const candidate = data.candidates[0];
+    // Check if content exists but parts is empty or missing
+    if (!candidate.content?.parts || candidate.content.parts.length === 0) {
+      throw new Error('Gemini API returned empty content (try again or simplify the prompt)');
+    }
+  }
+
   // Handle rate limit / quota errors
   if (data.error) {
     throw new Error(`Gemini API: ${data.error.message || JSON.stringify(data.error)}`);

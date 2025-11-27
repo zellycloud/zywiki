@@ -94,22 +94,39 @@ export async function setupClaudeCode(projectRoot) {
  * Update CLAUDE.md with auto-sync instructions
  */
 function updateClaudeMd(claudeMdPath) {
-  const marker = '<!-- ZY-DOCS:START -->';
-  const endMarker = '<!-- ZY-DOCS:END -->';
+  const marker = '<!-- ZYWIKI:START -->';
+  const endMarker = '<!-- ZYWIKI:END -->';
 
   const instructions = `${marker}
-# Auto Documentation Sync (zywiki)
+# zywiki - AI Code Wiki Integration
 
-At session start, check for pending documentation updates:
+## Documentation Sync (Manual Mode)
+
+Check for pending documentation updates:
 
 \`\`\`bash
-cat .zywiki/pending.json 2>/dev/null
+zywiki status
+zywiki detect
 \`\`\`
 
 If there are pending updates:
-1. Read the changed files listed
+1. Read the changed files with \`zywiki detect\`
 2. Update the affected documents to match current code
 3. Run \`zywiki sync --clear\` when done
+
+## How to Use zywiki
+
+### Commands
+- \`zywiki status\` - Check tracking status
+- \`zywiki add <path>\` - Add files for tracking
+- \`zywiki build --prompt\` - Generate AI documentation
+- \`zywiki detect\` - Detect changed files
+- \`zywiki sync\` - Generate update prompt
+
+### Generate Documentation
+\`\`\`bash
+zywiki build --prompt
+\`\`\`
 ${endMarker}`;
 
   let content = '';
@@ -149,13 +166,15 @@ export async function setupClaudeCodeAuto(projectRoot) {
  * Update CLAUDE.md with AUTO sync instructions
  */
 function updateClaudeMdAuto(claudeMdPath) {
-  const marker = '<!-- ZY-DOCS:START -->';
-  const endMarker = '<!-- ZY-DOCS:END -->';
+  const marker = '<!-- ZYWIKI:START -->';
+  const endMarker = '<!-- ZYWIKI:END -->';
 
   const instructions = `${marker}
-# Auto Documentation Sync (zywiki)
+# zywiki - AI Code Wiki Integration
 
-**At session start**, check \`.zywiki/pending.json\`:
+## Auto Documentation Sync
+
+**At session start**, check for pending documentation updates:
 
 \`\`\`bash
 cat .zywiki/pending.json 2>/dev/null
@@ -169,6 +188,56 @@ cat .zywiki/pending.json 2>/dev/null
 5. Run \`zywiki sync --clear\` when done
 
 This is AUTO mode - execute without asking for confirmation.
+
+## How to Use zywiki
+
+### Check Status
+\`\`\`bash
+zywiki status
+\`\`\`
+
+### Add Files for Tracking
+\`\`\`bash
+# Add single file
+zywiki add src/lib/service.ts
+
+# Add directory recursively
+zywiki add src/ --recursive
+\`\`\`
+
+### Generate Documentation
+\`\`\`bash
+# Generate AI documentation for all tracked files
+zywiki build --prompt
+
+# Generate for specific filter
+zywiki build --prompt --filter "hooks"
+
+# Force regenerate existing docs
+zywiki build --prompt --force
+\`\`\`
+
+### Detect Changes
+\`\`\`bash
+zywiki detect
+\`\`\`
+
+## Document Format
+
+Generated documents follow this structure:
+- \`<cite>file/path</cite>\` - Source file reference
+- Overview (2-3 sentences)
+- Mermaid diagrams (architecture, data flow, dependencies)
+- Functions/classes list
+- Usage examples
+- Troubleshooting guide
+
+## Configuration
+
+Config file: \`.zywiki/config.json\`
+- \`docsDir\`: Documentation output directory (default: "zywiki")
+- \`language\`: Output language (ko, en, ja, zh, etc.)
+- \`ai.provider\`: "gemini" or "claude"
 ${endMarker}`;
 
   let content = '';
@@ -218,8 +287,8 @@ export async function removeClaudeCode(projectRoot) {
   // Remove from CLAUDE.md
   if (fs.existsSync(claudeMdPath)) {
     let content = fs.readFileSync(claudeMdPath, 'utf-8');
-    const marker = '<!-- ZY-DOCS:START -->';
-    const endMarker = '<!-- ZY-DOCS:END -->';
+    const marker = '<!-- ZYWIKI:START -->';
+    const endMarker = '<!-- ZYWIKI:END -->';
     const regex = new RegExp(`\\n*${marker}[\\s\\S]*?${endMarker}\\n*`, 'g');
     content = content.replace(regex, '\n');
     fs.writeFileSync(claudeMdPath, content.trim() + '\n');
