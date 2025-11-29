@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { saveConfig, saveMetadata, getDefaultConfig, getPaths } from '../core/metadata.mjs';
 import { setupClaudeCode, setupClaudeCodeAuto, updateClaudeMdInstructions } from '../integrations/claude-code.mjs';
+import { setupGitHooks } from '../integrations/git-hooks.mjs';
 import { askYesNo, askLanguage, askAIProvider, askAPIKey } from '../core/prompt.mjs';
 import { scanAndAddFiles } from './add.mjs';
 import { buildCommand } from './build.mjs';
@@ -141,9 +142,13 @@ export async function initCommand(options) {
     }
   }
 
-  // Git hooks (future)
+  // Git hooks for auto doc detection
   if (options.git) {
-    console.log('Git hooks: Not implemented yet');
+    try {
+      await setupGitHooks(cwd);
+    } catch (err) {
+      console.log('Warning: Could not setup Git hooks');
+    }
   }
 
   // Always update CLAUDE.md with zywiki instructions

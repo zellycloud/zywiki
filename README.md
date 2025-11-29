@@ -44,6 +44,7 @@ zywiki build
 | `zywiki detect` | Detect changed files |
 | `zywiki sync` | Generate update prompt |
 | `zywiki update` | Update config and re-scan project |
+| `zywiki init --git` | Initialize with Git hooks for auto-sync |
 
 ## Tech Stack Detection
 
@@ -136,7 +137,31 @@ zywiki init  # Select: Claude Code CLI
 
 English, Español, Français, 日本語, 한국어, Português, Русский, Tiếng Việt, 简体中文, 繁體中文
 
+## Git Hooks Integration
+
+Automatically sync documentation when you commit code changes:
+
+```bash
+# Initialize with Git hooks
+zywiki init --git
+
+# Or add hooks to existing setup
+# (hooks are added to .git/hooks/post-commit)
+```
+
+**How it works:**
+1. On every `git commit`, zywiki detects changed source files
+2. Creates `.claude/auto-docs-update.flag` with pending updates
+3. Next Claude Code session automatically picks up the flag
+4. Run `zywiki build` to update documentation
+
 ## Changelog
+
+### v0.2.4
+- **New**: Git hooks integration for automatic documentation sync
+- **New**: Auto-create `.claude/auto-docs-update.flag` on commit for Claude Code session detection
+- **New**: `--git` flag in `zywiki init` to setup Git post-commit hooks
+- **Improved**: Better integration with Claude Code workflow
 
 ### v0.2.3
 - **New**: Auto-update `CLAUDE.md` with zywiki instructions on `init` and `update`
