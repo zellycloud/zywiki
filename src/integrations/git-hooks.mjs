@@ -5,7 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { getConfig } from '../core/metadata.mjs';
+import { loadConfig } from '../core/metadata.mjs';
 
 /**
  * Setup Git post-commit hook for automatic doc detection
@@ -41,7 +41,7 @@ export async function setupGitHooks(projectRoot) {
   }
 
   // Get config for docsDir
-  const config = getConfig();
+  const config = loadConfig();
   const docsDir = config?.docsDir || 'zywiki';
 
   // Add zywiki hook section
