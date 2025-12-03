@@ -8,6 +8,7 @@ import path from 'path';
 import { spawn } from 'child_process';
 import { loadConfig, loadMetadata, getPaths, addDocument } from '../core/metadata.mjs';
 import { groupFilesByFeature, getGroupingStats } from '../core/grouper.mjs';
+import { clearPending } from '../core/detector.mjs';
 import { generateDocPrompt } from '../core/ai-generator.mjs';
 import { callGeminiAPI } from '../core/gemini.mjs';
 
@@ -138,6 +139,12 @@ export async function buildCommand(options) {
 
   console.log('');
   console.log(`Generated: ${generated}, Skipped: ${skipped}, Errors: ${errors}`);
+
+  // Clear pending if any documents were generated
+  if (generated > 0) {
+    clearPending();
+    console.log('Pending updates cleared.');
+  }
 }
 
 /**

@@ -43,14 +43,29 @@ export async function statusCommand() {
     }
   }
 
+  // Show pending summary (limit to 5 items)
   if (pending.changedFiles && pending.changedFiles.length > 0) {
-    console.log('\nPending changes:');
-    pending.changedFiles.forEach(f => console.log(`  - ${f}`));
+    const maxShow = 5;
+    const files = pending.changedFiles;
+    console.log(`\nPending changes (${files.length} files):`);
+    files.slice(0, maxShow).forEach(f => console.log(`  - ${f}`));
+    if (files.length > maxShow) {
+      console.log(`  ... and ${files.length - maxShow} more`);
+    }
   }
 
   if (pending.affectedDocs && pending.affectedDocs.length > 0) {
-    console.log('\nAffected documents:');
-    pending.affectedDocs.forEach(d => console.log(`  - ${d}`));
+    const maxShow = 5;
+    const docs = pending.affectedDocs;
+    console.log(`\nAffected documents (${docs.length} docs):`);
+    docs.slice(0, maxShow).forEach(d => console.log(`  - ${d}`));
+    if (docs.length > maxShow) {
+      console.log(`  ... and ${docs.length - maxShow} more`);
+    }
+  }
+
+  if (stats.pending > 0) {
+    console.log('\nRun "zywiki build" to generate missing docs.');
   }
 
   console.log('');
