@@ -5,13 +5,26 @@
 
 import fs from 'fs';
 import path from 'path';
-import { saveConfig, saveMetadata, getDefaultConfig, getPaths } from '../core/metadata.mjs';
+import { saveConfig, saveMetadata, loadMetadata, getDefaultConfig, getPaths } from '../core/metadata.mjs';
 import { setupClaudeCode, setupClaudeCodeAuto, updateClaudeMdInstructions } from '../integrations/claude-code.mjs';
 import { setupGitHooks } from '../integrations/git-hooks.mjs';
 import { askYesNo, askLanguage, askAIProvider, askAPIKey } from '../core/prompt.mjs';
 import { scanAndAddFiles } from './add.mjs';
 import { buildCommand } from './build.mjs';
 import { getTechStack, saveOverview } from '../core/detector.mjs';
+import { execSync } from 'child_process';
+
+/**
+ * Check if Claude CLI is available
+ */
+async function checkClaudeCli() {
+  try {
+    execSync('which claude', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Initialize documentation structure
@@ -73,6 +86,21 @@ export async function initCommand(options) {
   // Ask for language selection
   const language = await askLanguage();
 
+  // Auto-detect Git repository
+  const isGitRepo = fs.existsSync(path.join(cwd, '.git'));
+  let enableGit = options.git || false;
+  if (isGitRepo && !options.git) {
+    enableGit = await askYesNo('\nGit repository detected. Enable auto-sync on commit?', true);
+  }
+
+  // Auto-detect Claude Code
+  const hasClaudeDir = fs.existsSync(path.join(cwd, '.claude'));
+  const hasClaudeCli = await checkClaudeCli();
+  let enableClaude = options.claude || false;
+  if ((hasClaudeDir || hasClaudeCli) && !options.claude) {
+    enableClaude = await askYesNo('Claude Code detected. Enable Claude Code integration?', true);
+  }
+
   // Determine docsDir: CLI option > existing config > default
   const docsDirName = options.docsDir || existingDocsDir || config.docsDir;
   config.docsDir = docsDirName;
@@ -82,22 +110,32 @@ export async function initCommand(options) {
     model: provider === 'gemini' ? 'gemini-2.5-flash' : 'haiku',
     apiKey: apiKey || null, // Store in config (or use env var)
   };
-  config.integrations.claudeCode = options.claude || false;
-  config.integrations.git = options.git || false;
+  config.integrations.claudeCode = enableClaude;
+  config.integrations.git = enableGit;
   saveConfig(config);
   console.log(`\nCreated .zywiki/config.json (provider: ${provider}, language: ${language})`);
 
   // Use the determined docsDir
   const docsDir = path.join(cwd, docsDirName);
 
-  // Create metadata.json
-  saveMetadata({
-    version: '1.0.0',
-    lastUpdated: new Date().toISOString(),
-    snippets: [],
-    documents: [],
-  });
-  console.log('Created .zywiki/metadata.json');
+  // Create or preserve metadata.json
+  const metadataPath = path.join(configDir, 'metadata.json');
+  if (fs.existsSync(metadataPath) && options.force) {
+    // Preserve existing metadata on --force (only update version)
+    const existingMetadata = loadMetadata();
+    existingMetadata.lastUpdated = new Date().toISOString();
+    saveMetadata(existingMetadata);
+    console.log('Preserved .zywiki/metadata.json (existing data kept)');
+  } else if (!fs.existsSync(metadataPath)) {
+    // Create new metadata only if it doesn't exist
+    saveMetadata({
+      version: '1.0.0',
+      lastUpdated: new Date().toISOString(),
+      snippets: [],
+      documents: [],
+    });
+    console.log('Created .zywiki/metadata.json');
+  }
 
   // Scan project structure and create matching wiki directories
   const projectDirs = scanProjectStructure(cwd);
@@ -132,7 +170,7 @@ export async function initCommand(options) {
   // Template files removed - AI generates all documentation
 
   // Claude Code integration
-  if (options.claude) {
+  if (enableClaude) {
     if (options.auto) {
       await setupClaudeCodeAuto(cwd);
       console.log('Configured Claude Code hooks (auto mode)');
@@ -143,7 +181,7 @@ export async function initCommand(options) {
   }
 
   // Git hooks for auto doc detection
-  if (options.git) {
+  if (enableGit) {
     try {
       await setupGitHooks(cwd);
     } catch (err) {

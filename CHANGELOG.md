@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2025-12-03
+
+### Added
+- **Auto-detect Git**: Automatically prompts to enable Git hooks when `.git` directory is detected
+- **Auto-detect Claude Code**: Automatically prompts to enable Claude Code integration when `.claude` directory or `claude` CLI is detected
+
+### Changed
+- **Interactive Setup**: `zywiki init` now asks whether to enable Git hooks and Claude Code integration instead of requiring CLI flags
+- **Default Behavior**: Git and Claude integrations are now prompted with `Y` as default when detected
+
+### Fixed
+- **Preserve Metadata on --force**: `zywiki init --force` now preserves existing metadata.json instead of resetting it, preventing unnecessary full rebuilds
+
 ## [0.2.5] - 2025-11-30
 
 ### Fixed
