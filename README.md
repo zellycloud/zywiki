@@ -157,6 +157,19 @@ zywiki init --git
 
 ## Changelog
 
+### v0.2.7
+- **Fixed**: `zywiki build` now clears pending.json after successful generation
+- **Fixed**: Status output limited to 5 items with summary count
+
+### v0.2.6
+- **New**: Auto-detect Git and Claude Code for interactive setup
+- **Changed**: `zywiki init` now prompts for Git/Claude integration instead of requiring flags
+- **Fixed**: Preserve metadata.json on `--force` to prevent unnecessary rebuilds
+
+### v0.2.5
+- **Fixed**: Critical import error in git-hooks.mjs
+- **Changed**: Added `.zyflow/` to `.gitignore`
+
 ### v0.2.4
 - **New**: Git hooks integration for automatic documentation sync
 - **New**: Auto-create `.claude/auto-docs-update.flag` on commit for Claude Code session detection
