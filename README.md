@@ -157,7 +157,7 @@ zywiki init --git
 
 ## Changelog
 
-### v0.2.7
+### v0.2.8
 - **Fixed**: `zywiki build` now clears pending.json after successful generation
 - **Fixed**: Status output limited to 5 items with summary count
 
