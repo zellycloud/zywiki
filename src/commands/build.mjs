@@ -6,25 +6,79 @@
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
-import { loadConfig, loadMetadata, getPaths, addDocument } from '../core/metadata.mjs';
+import { loadConfig, loadMetadata, saveMetadata, getPaths, addDocument, addSnippet } from '../core/metadata.mjs';
 import { groupFilesByFeature, getGroupingStats } from '../core/grouper.mjs';
-import { clearPending } from '../core/detector.mjs';
+import { clearPending, loadPending } from '../core/detector.mjs';
 import { generateDocPrompt } from '../core/ai-generator.mjs';
 import { callGeminiAPI } from '../core/gemini.mjs';
+import { matchesPattern, getLineCount } from '../core/parser.mjs';
+
+/**
+ * Auto-scan and add files based on sourcePatterns
+ */
+async function autoScanFiles(config, root) {
+  const metadata = loadMetadata();
+  const existingPaths = new Set(metadata.snippets.map(s => s.path));
+  let added = 0;
+
+  const scanDir = (dir) => {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const relativePath = path.relative(root, fullPath);
+
+        if (entry.isDirectory()) {
+          // Skip ignored directories
+          if (entry.name === 'node_modules' || entry.name.startsWith('.') ||
+              entry.name === 'dist' || entry.name === 'build' ||
+              entry.name === config.docsDir) {
+            continue;
+          }
+          scanDir(fullPath);
+        } else {
+          // Check if file matches patterns and not already tracked
+          if (!existingPaths.has(relativePath) &&
+              matchesPattern(relativePath, config.sourcePatterns, config.ignorePatterns)) {
+            const lineCount = getLineCount(fullPath);
+            const snippet = addSnippet(fullPath, [1, lineCount]);
+            if (snippet) {
+              added++;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore permission errors
+    }
+  };
+
+  scanDir(root);
+  return added;
+}
 
 /**
  * Build documentation using Claude AI
  */
-export async function buildCommand(options) {
-  const metadata = loadMetadata();
+export async function buildCommand(options = {}) {
   const config = loadConfig();
+  const { root } = getPaths();
 
-  if (metadata.snippets.length === 0) {
-    console.log('No files tracked. Use "zywiki add <path>" to add files first.');
-    return;
+  // Auto-scan files first
+  console.log('Scanning for source files...');
+  const addedCount = await autoScanFiles(config, root);
+  if (addedCount > 0) {
+    console.log(`  Added ${addedCount} new files\n`);
   }
 
-  const { root } = getPaths();
+  const metadata = loadMetadata();
+
+  if (metadata.snippets.length === 0) {
+    console.log('No source files found matching patterns in config.');
+    console.log('Check .zywiki/config.json sourcePatterns.');
+    return;
+  }
 
   // Determine AI provider
   const provider = config.ai?.provider || 'claude';
@@ -55,6 +109,15 @@ export async function buildCommand(options) {
 
   console.log(`${stats.totalGroups} groups from ${stats.totalFiles} files\n`);
 
+  // Load pending updates to check which docs need updating
+  const pending = loadPending();
+  const pendingDocs = new Set(pending.affectedDocs || []);
+  const hasPending = pendingDocs.size > 0;
+
+  if (hasPending) {
+    console.log(`Pending updates: ${pendingDocs.size} documents\n`);
+  }
+
   // Filter if specified
   let groupsToProcess = groups;
   if (options.filter) {
@@ -73,12 +136,26 @@ export async function buildCommand(options) {
     const docsDir = path.join(root, config.docsDir, group.category);
     const docFileName = sanitizeFileName(group.key) + '.md';
     const docPath = path.join(docsDir, docFileName);
+    const relativeDocPath = path.relative(root, docPath);
 
     console.log(`[${i + 1}/${groupsToProcess.length}] ${group.title}`);
 
-    // Skip if exists and not forcing
-    if (fs.existsSync(docPath) && !options.force) {
-      console.log(`  → Skipped (use --force to overwrite)`);
+    // Check if this doc needs updating
+    const docExists = fs.existsSync(docPath);
+    const isPending = pendingDocs.has(relativeDocPath);
+
+    // Skip logic:
+    // - If --force: never skip
+    // - If doc doesn't exist: don't skip (create new)
+    // - If doc exists and is pending: don't skip (update)
+    // - If doc exists and not pending and no --force: skip
+    if (docExists && !options.force && !isPending) {
+      // Only show skip message if there are no pending docs (avoid noise)
+      if (!hasPending) {
+        console.log(`  → Skipped (use --force to overwrite)`);
+      } else {
+        console.log(`  → Up to date`);
+      }
       skipped++;
       continue;
     }
@@ -144,6 +221,35 @@ export async function buildCommand(options) {
   if (generated > 0) {
     clearPending();
     console.log('Pending updates cleared.');
+
+    // Auto-index for RAG search
+    await autoIndex();
+  }
+}
+
+/**
+ * Auto-index documents after build (if RAG is available)
+ */
+async function autoIndex() {
+  try {
+    const { indexAll } = await import('../core/rag/index.mjs');
+
+    console.log('\nUpdating search index...');
+
+    const result = await indexAll({
+      onProgress: ({ current, total }) => {
+        process.stdout.write(`\r  Indexing ${current}/${total}...`);
+      },
+    });
+
+    console.log(`\r  ✓ Indexed ${result.indexed} files, ${result.sections} sections    `);
+  } catch (error) {
+    if (error.code === 'ERR_MODULE_NOT_FOUND' || error.message.includes('not installed')) {
+      // RAG not installed, skip silently
+      console.log('\nTip: Install RAG for semantic search: npm install @xenova/transformers @orama/orama');
+    } else {
+      console.log(`\nIndex update skipped: ${error.message}`);
+    }
   }
 }
 

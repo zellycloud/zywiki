@@ -5,11 +5,10 @@
 
 import fs from 'fs';
 import path from 'path';
-import { saveConfig, saveMetadata, loadMetadata, getDefaultConfig, getPaths } from '../core/metadata.mjs';
+import { saveConfig, saveMetadata, loadMetadata, getDefaultConfig } from '../core/metadata.mjs';
 import { setupClaudeCode, setupClaudeCodeAuto, updateClaudeMdInstructions } from '../integrations/claude-code.mjs';
 import { setupGitHooks } from '../integrations/git-hooks.mjs';
 import { askYesNo, askLanguage, askAIProvider, askAPIKey } from '../core/prompt.mjs';
-import { scanAndAddFiles } from './add.mjs';
 import { buildCommand } from './build.mjs';
 import { getTechStack, saveOverview } from '../core/detector.mjs';
 import { execSync } from 'child_process';
@@ -137,35 +136,12 @@ export async function initCommand(options) {
     console.log('Created .zywiki/metadata.json');
   }
 
-  // Scan project structure and create matching wiki directories
-  const projectDirs = scanProjectStructure(cwd);
-
-  // Create wiki directories based on project structure
-  const wikiDirs = [docsDir];
-
-  if (projectDirs.length > 0) {
-    console.log('\nDetected wiki categories:');
-    for (const dir of projectDirs) {
-      const wikiDir = path.join(docsDir, dir.wikiPath);
-      wikiDirs.push(wikiDir);
-      console.log(`  ${docsDirName}/${dir.wikiPath}/`);
-    }
-  } else {
-    // Fallback to default structure
-    console.log('\nUsing default wiki structure:');
-    const defaultDirs = ['architecture', 'features', 'api', 'database', 'guides'];
-    for (const dir of defaultDirs) {
-      wikiDirs.push(path.join(docsDir, dir));
-      console.log(`  ${docsDirName}/${dir}/`);
-    }
+  // Create docs directory only (category folders are created on-demand during build)
+  if (!fs.existsSync(docsDir)) {
+    fs.mkdirSync(docsDir, { recursive: true });
   }
-
-  for (const dir of wikiDirs) {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  }
-  console.log(`\nCreated ${docsDirName}/ directory structure`);
+  console.log(`\nCreated ${docsDirName}/ directory`);
+  console.log('Category folders will be created automatically during build.');
 
   // Template files removed - AI generates all documentation
 
@@ -249,146 +225,20 @@ export async function initCommand(options) {
 
   if (sourceDirs.length > 0) {
     console.log('\nDetected source directories:');
-    sourceDirs.forEach((dir) => console.log(`  - ${dir.path} (${dir.category})`));
+    sourceDirs.forEach((dir) => console.log(`  - ${dir.path}/`));
 
-    const shouldScan = await askYesNo('\nWould you like to scan these directories and add files for tracking?');
+    const shouldBuild = await askYesNo('\nWould you like to generate documentation now?');
 
-    if (shouldScan) {
-      let totalAdded = 0;
-
-      for (const dir of sourceDirs) {
-        console.log(`\nScanning ${dir.path}/...`);
-        const addedCount = await scanAndAddFiles(dir.path, { recursive: true });
-        console.log(`  Added ${addedCount} files`);
-        totalAdded += addedCount;
-      }
-
-      console.log(`\nTotal: ${totalAdded} files added for tracking.`);
-
-      if (totalAdded > 0) {
-        const shouldBuild = await askYesNo('\nWould you like to generate AI prompts for documentation?');
-
-        if (shouldBuild) {
-          console.log('');
-          // Generate AI prompts by default (qoder-style workflow)
-          await buildCommand({ prompt: true, force: options.force || false });
-        }
-      }
+    if (shouldBuild) {
+      console.log('');
+      await buildCommand({});
     }
-  } else {
-    console.log('\nNo source directories detected. Use "zywiki add <path>" to add files manually.');
   }
 
   console.log('\nNext steps:');
-  console.log('  zywiki build --prompt     # Generate AI prompts for documentation');
-  console.log('  zywiki build              # Generate basic doc structure');
+  console.log('  zywiki build              # Generate documentation (auto-scan)');
+  console.log('  zywiki update [path]      # Force regenerate documentation');
   console.log('  zywiki status             # Check status');
-}
-
-/**
- * Scan project structure and return simplified category mappings
- * Maps source folders to wiki categories (repowiki-style)
- */
-function scanProjectStructure(cwd) {
-  const categories = new Set();
-  const ignoreDirs = new Set([
-    'node_modules', '.git', '.zywiki', 'zywiki', 'dist', 'build', 'out',
-    '.next', '.nuxt', '.cache', 'coverage', '.turbo', '.vercel',
-    'repowiki', 'zy-docs', '.zy-docs', 'wiki', 'docs',
-    'tmp', 'temp', 'archive', 'backup', 'deprecated', 'disabled',
-    'v3-worktree', 'worktree', 'vendor', 'third_party', 'public'
-  ]);
-
-  // Category mapping rules: folder patterns → wiki category
-  const categoryRules = [
-    // Architecture & Core
-    { patterns: ['agents', 'core', 'lib', 'services', 'providers', 'engine'], category: 'architecture' },
-    // Features & UI
-    { patterns: ['components', 'hooks', 'pages', 'app', 'views', 'screens', 'features', 'modules'], category: 'features' },
-    // API & Server
-    { patterns: ['api', 'server', 'routes', 'controllers', 'endpoints', 'functions'], category: 'api' },
-    // Database & Data
-    { patterns: ['migrations', 'prisma', 'database', 'db', 'models', 'schemas', 'supabase'], category: 'database' },
-    // Security & Auth
-    { patterns: ['auth', 'security', 'middleware', 'policies', 'permissions', 'rbac', 'oauth', 'jwt'], category: 'security' },
-    // Deployment & Infra
-    { patterns: ['deploy', 'docker', 'k8s', 'kubernetes', 'ci', 'cd', 'infra', 'terraform', 'ansible', 'github', 'workflows'], category: 'deployment' },
-    // Testing
-    { patterns: ['tests', '__tests__', 'e2e', 'test', 'spec', 'cypress', 'playwright'], category: 'testing' },
-    // Guides & Utils
-    { patterns: ['scripts', 'utils', 'helpers', 'tools', 'bin', 'cli', 'commands'], category: 'guides' },
-    // Types & Config
-    { patterns: ['types', 'interfaces', 'config', 'constants'], category: 'architecture' },
-    // Styles
-    { patterns: ['styles', 'css', 'themes'], category: 'features' },
-  ];
-
-  // Scan directories and map to categories
-  const topLevelDirs = fs.readdirSync(cwd, { withFileTypes: true })
-    .filter(d => d.isDirectory() && !d.name.startsWith('.') && !ignoreDirs.has(d.name));
-
-  for (const dir of topLevelDirs) {
-    const dirPath = path.join(cwd, dir.name);
-    if (!hasCodeFiles(dirPath)) continue;
-
-    // Find matching category
-    const dirNameLower = dir.name.toLowerCase();
-    let matched = false;
-
-    for (const rule of categoryRules) {
-      if (rule.patterns.some(p => dirNameLower.includes(p))) {
-        categories.add(rule.category);
-        matched = true;
-        break;
-      }
-    }
-
-    // Also scan subdirectories for category hints
-    try {
-      const subDirs = fs.readdirSync(dirPath, { withFileTypes: true })
-        .filter(d => d.isDirectory() && !d.name.startsWith('.') && !ignoreDirs.has(d.name));
-
-      for (const subDir of subDirs) {
-        const subDirPath = path.join(dirPath, subDir.name);
-        if (!hasCodeFiles(subDirPath)) continue;
-
-        const subDirNameLower = subDir.name.toLowerCase();
-        for (const rule of categoryRules) {
-          if (rule.patterns.some(p => subDirNameLower.includes(p))) {
-            categories.add(rule.category);
-            break;
-          }
-        }
-      }
-    } catch (e) {
-      // Ignore errors
-    }
-
-    // Default: if has code but no match, add to features
-    if (!matched && hasCodeFiles(dirPath)) {
-      categories.add('features');
-    }
-  }
-
-  // Convert to results format
-  return Array.from(categories).map(cat => ({
-    sourcePath: cat,
-    wikiPath: cat,
-  }));
-}
-
-/**
- * Check if directory contains code files
- */
-function hasCodeFiles(dirPath) {
-  const codeExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.java', '.rb', '.php', '.sql', '.prisma'];
-
-  try {
-    const files = fs.readdirSync(dirPath);
-    return files.some(f => codeExtensions.some(ext => f.endsWith(ext)));
-  } catch (e) {
-    return false;
-  }
 }
 
 /**
@@ -410,6 +260,8 @@ function detectSourceDirectories(cwd) {
     { path: 'supabase/migrations', category: 'database' },
     { path: 'prisma', category: 'database' },
     { path: 'scripts', category: 'guides' },
+    { path: 'bin', category: 'guides' },
+    { path: 'tools', category: 'guides' },
     { path: 'tests', category: 'testing' },
     { path: '__tests__', category: 'testing' },
     { path: 'e2e', category: 'testing' },
