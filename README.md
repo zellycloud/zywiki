@@ -45,6 +45,8 @@ zywiki build
 | `zywiki sync` | Generate update prompt |
 | `zywiki update` | Update config and re-scan project |
 | `zywiki init --git` | Initialize with Git hooks for auto-sync |
+| `zywiki index` | Create/update RAG search index |
+| `zywiki search <query>` | Search wiki documents (semantic + keyword) |
 
 ## Tech Stack Detection
 
@@ -156,6 +158,13 @@ zywiki init --git
 4. Run `zywiki build` to update documentation
 
 ## Changelog
+
+### v0.3.0
+- **New**: RAG Search - Local semantic search using Orama + Transformers.js
+  - `zywiki index`: Create/update search index
+  - `zywiki search <query>`: Hybrid search (BM25 + vector)
+  - Multilingual support with multilingual-e5-small model
+  - Optional dependencies for lightweight base install
 
 ### v0.2.8
 - **Fixed**: `zywiki build` now clears pending.json after successful generation
