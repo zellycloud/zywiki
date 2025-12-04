@@ -5,18 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2025-12-03
+## [0.3.0] - 2025-12-04
 
 ### Added
 - **RAG Search**: Local semantic search using Orama + Transformers.js
   - `zywiki search <query>`: Search wiki documents using hybrid search (BM25 + vector)
-  - `zywiki index`: Create or update search index for RAG
+  - Auto-index after `build` and `update` commands
   - Multilingual support with multilingual-e5-small embedding model
   - Optional dependencies (RAG packages only installed when needed)
-- **Auto-Index**: `zywiki build` now automatically updates the search index after generating documents
-- **Roadmap**: Added `/docs/ROADMAP.md` with version plans (v0.4-v0.7)
+
+### Changed
+- **Build/Update Semantics**: Redesigned command behavior to follow conventional patterns
+  - `build`: Full documentation generation (prompts for confirmation if docs exist)
+  - `build --force`: Skip confirmation and rebuild all
+  - `update`: Only update pending documents (changed source files)
+- **CLI Commands**: Simplified from 11 to 6 commands
+  - Removed: `add`, `detect`, `sync`, `index`, `group`
+  - Kept: `init`, `build`, `update`, `status`, `search`, `stack`
 
 ### Improved
+- **Status Display**: Show build progress with tracked files, groups, and provider info
 - **Error Messages**: Better guidance when RAG dependencies are not installed
 
 ## [0.2.8] - 2025-12-03

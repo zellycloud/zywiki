@@ -36,17 +36,12 @@ zywiki build
 | Command | Description |
 |---------|-------------|
 | `zywiki init` | Initialize documentation structure |
-| `zywiki add <path>` | Register files for tracking |
-| `zywiki build` | Generate AI documentation |
-| `zywiki stack` | Analyze and display project tech stack |
-| `zywiki stack --save` | Save tech stack as markdown |
+| `zywiki build` | Generate all documentation (prompts if docs exist) |
+| `zywiki build --force` | Skip confirmation and rebuild all |
+| `zywiki update` | Update only pending documents (changed source files) |
 | `zywiki status` | Show tracking status with tech summary |
-| `zywiki detect` | Detect changed files |
-| `zywiki sync` | Generate update prompt |
-| `zywiki update` | Update config and re-scan project |
-| `zywiki init --git` | Initialize with Git hooks for auto-sync |
-| `zywiki index` | Create/update RAG search index |
 | `zywiki search <query>` | Search wiki documents (semantic + keyword) |
+| `zywiki stack` | Analyze and display project tech stack |
 
 ## Tech Stack Detection
 
@@ -161,10 +156,14 @@ zywiki init --git
 
 ### v0.3.0
 - **New**: RAG Search - Local semantic search using Orama + Transformers.js
-  - `zywiki index`: Create/update search index
   - `zywiki search <query>`: Hybrid search (BM25 + vector)
+  - Auto-index after `build` and `update` commands
   - Multilingual support with multilingual-e5-small model
-  - Optional dependencies for lightweight base install
+- **Changed**: Build/Update command semantics redesigned
+  - `build`: Full documentation generation (prompts if docs exist)
+  - `update`: Only update pending documents (changed source files)
+- **Changed**: CLI simplified from 11 to 6 commands
+- **Improved**: Status display with build progress info
 
 ### v0.2.8
 - **Fixed**: `zywiki build` now clears pending.json after successful generation
