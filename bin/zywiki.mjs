@@ -38,14 +38,15 @@ program
 
 program
   .command('build')
-  .description('Scan source files and generate documentation (incremental)')
+  .description('Generate all documentation (prompts if docs exist)')
+  .option('--force', 'Skip confirmation and rebuild all')
   .option('--filter <keyword>', 'Filter groups by keyword')
   .option('--lang <code>', 'Language (ko, en, ja, zh, es, fr, etc.)', 'ko')
   .action(buildCommand);
 
 program
   .command('update [path]')
-  .description('Force regenerate documentation (overwrites existing)')
+  .description('Update only pending documents (changed source files)')
   .option('--lang <code>', 'Language (ko, en, ja, zh, es, fr, etc.)', 'ko')
   .action(updateCommand);
 

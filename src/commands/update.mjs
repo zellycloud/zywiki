@@ -1,17 +1,19 @@
 /**
  * update.mjs
- * Force regenerate existing documentation
+ * Update documentation for pending changes only
+ * - Only updates documents affected by source file changes
+ * - Use 'build --force' for full rebuild
  */
 
 import fs from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
 import { loadConfig, loadMetadata, getPaths, addDocument, addSnippet } from '../core/metadata.mjs';
 import { groupFilesByFeature, getGroupingStats } from '../core/grouper.mjs';
-import { clearPending } from '../core/detector.mjs';
+import { clearPending, loadPending } from '../core/detector.mjs';
 import { generateDocPrompt } from '../core/ai-generator.mjs';
 import { callGeminiAPI } from '../core/gemini.mjs';
 import { matchesPattern, getLineCount } from '../core/parser.mjs';
-import { spawn } from 'child_process';
 
 /**
  * Auto-scan and add files based on sourcePatterns
@@ -57,13 +59,11 @@ async function autoScanFiles(config, root) {
 }
 
 /**
- * Update command - force regenerate documentation
+ * Update command - update pending documents only
  */
 export async function updateCommand(filterPath, options = {}) {
   const config = loadConfig();
   const { root } = getPaths();
-
-  console.log('zywiki Update - Force Regenerate Documentation\n');
 
   // Auto-scan files first
   console.log('Scanning for source files...');
@@ -82,8 +82,6 @@ export async function updateCommand(filterPath, options = {}) {
   // Determine AI provider
   const provider = config.ai?.provider || 'claude';
   const providerName = provider === 'gemini' ? 'Gemini API' : 'Claude CLI';
-
-  console.log(`Regenerating documentation with ${providerName}...\n`);
 
   // Check provider availability
   if (provider === 'claude') {
@@ -106,23 +104,53 @@ export async function updateCommand(filterPath, options = {}) {
   const groups = groupFilesByFeature(metadata.snippets, config);
   const stats = getGroupingStats(groups);
 
-  console.log(`${stats.totalGroups} groups from ${stats.totalFiles} files\n`);
+  // Load pending updates
+  const pending = loadPending();
+  const pendingDocs = new Set(pending.affectedDocs || []);
 
-  // Filter by path if specified
-  let groupsToProcess = groups;
+  // Show update status header
+  console.log('─'.repeat(40));
+  console.log(`zywiki Update`);
+  console.log('─'.repeat(40));
+  console.log(`Tracked files:    ${stats.totalFiles}`);
+  console.log(`Total groups:     ${stats.totalGroups}`);
+  console.log(`Pending updates:  ${pendingDocs.size}`);
+  console.log(`Provider:         ${providerName}`);
+  console.log('─'.repeat(40));
+  console.log('');
+
+  // Check if there are pending updates
+  if (pendingDocs.size === 0) {
+    console.log('No pending updates. All documents are up to date.');
+    console.log('Use "zywiki build --force" for full rebuild.');
+    return;
+  }
+
+  // Filter groups to only those with pending docs
+  let groupsToProcess = groups.filter(g => {
+    const docsDir = path.join(root, config.docsDir, g.category);
+    const docFileName = sanitizeFileName(g.key) + '.md';
+    const docPath = path.join(docsDir, docFileName);
+    const relativeDocPath = path.relative(root, docPath);
+    return pendingDocs.has(relativeDocPath);
+  });
+
+  // Apply path filter if specified
   if (filterPath) {
-    groupsToProcess = groups.filter(g =>
+    groupsToProcess = groupsToProcess.filter(g =>
       g.key.toLowerCase().includes(filterPath.toLowerCase()) ||
       g.files.some(f => f.path.toLowerCase().includes(filterPath.toLowerCase()))
     );
     if (groupsToProcess.length === 0) {
-      console.log(`No groups matching "${filterPath}" found.`);
+      console.log(`No pending groups matching "${filterPath}" found.`);
       return;
     }
     console.log(`Filtered: ${groupsToProcess.length} groups matching "${filterPath}"\n`);
   }
 
-  let generated = 0;
+  console.log(`Updating ${groupsToProcess.length} documents...\n`);
+
+  let updated = 0;
   let errors = 0;
 
   for (let i = 0; i < groupsToProcess.length; i++) {
@@ -146,7 +174,7 @@ export async function updateCommand(filterPath, options = {}) {
     let spinIdx = 0;
     const interval = setInterval(() => {
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
-      process.stdout.write(`\r  ${spinner[spinIdx++ % spinner.length]} Regenerating... ${elapsed}s`);
+      process.stdout.write(`\r  ${spinner[spinIdx++ % spinner.length]} Updating... ${elapsed}s`);
     }, 100);
 
     try {
@@ -168,7 +196,7 @@ export async function updateCommand(filterPath, options = {}) {
       addDocument(docPath, group.files.map(f => f.path));
 
       console.log(`\r  ✓ Done (${elapsed}s): ${path.relative(root, docPath)}                    `);
-      generated++;
+      updated++;
 
       // Rate limit delay for Gemini
       if (provider === 'gemini' && i < groupsToProcess.length - 1) {
@@ -187,10 +215,10 @@ export async function updateCommand(filterPath, options = {}) {
   }
 
   console.log('');
-  console.log(`Regenerated: ${generated}, Errors: ${errors}`);
+  console.log(`Updated: ${updated}, Errors: ${errors}`);
 
   // Clear pending updates
-  if (generated > 0) {
+  if (updated > 0) {
     clearPending();
     console.log('Pending updates cleared.');
 
@@ -200,7 +228,7 @@ export async function updateCommand(filterPath, options = {}) {
 }
 
 /**
- * Auto-index documents after build
+ * Auto-index documents after update
  */
 async function autoIndex() {
   try {

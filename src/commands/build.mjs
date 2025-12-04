@@ -1,14 +1,18 @@
 /**
  * build.mjs
  * Build documentation using AI (Claude CLI or Gemini API)
+ * - Full build: generates all documentation
+ * - Prompts for confirmation if docs already exist
+ * - Use --force to skip confirmation
  */
 
 import fs from 'fs';
 import path from 'path';
+import readline from 'readline';
 import { spawn } from 'child_process';
-import { loadConfig, loadMetadata, saveMetadata, getPaths, addDocument, addSnippet } from '../core/metadata.mjs';
+import { loadConfig, loadMetadata, getPaths, addDocument, addSnippet } from '../core/metadata.mjs';
 import { groupFilesByFeature, getGroupingStats } from '../core/grouper.mjs';
-import { clearPending, loadPending } from '../core/detector.mjs';
+import { clearPending } from '../core/detector.mjs';
 import { generateDocPrompt } from '../core/ai-generator.mjs';
 import { callGeminiAPI } from '../core/gemini.mjs';
 import { matchesPattern, getLineCount } from '../core/parser.mjs';
@@ -59,7 +63,24 @@ async function autoScanFiles(config, root) {
 }
 
 /**
- * Build documentation using Claude AI
+ * Prompt user for confirmation
+ */
+async function confirmPrompt(message) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise(resolve => {
+    rl.question(`${message} (y/N): `, answer => {
+      rl.close();
+      resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
+    });
+  });
+}
+
+/**
+ * Build command - full documentation build
  */
 export async function buildCommand(options = {}) {
   const config = loadConfig();
@@ -84,8 +105,6 @@ export async function buildCommand(options = {}) {
   const provider = config.ai?.provider || 'claude';
   const providerName = provider === 'gemini' ? 'Gemini API' : 'Claude CLI';
 
-  console.log(`Building documentation with ${providerName}...\n`);
-
   // Check provider availability
   if (provider === 'claude') {
     const claudeAvailable = await checkClaudeCLI();
@@ -107,15 +126,31 @@ export async function buildCommand(options = {}) {
   const groups = groupFilesByFeature(metadata.snippets, config);
   const stats = getGroupingStats(groups);
 
-  console.log(`${stats.totalGroups} groups from ${stats.totalFiles} files\n`);
+  // Check if docs already exist
+  const docsPath = path.join(root, config.docsDir);
+  const existingDocs = fs.existsSync(docsPath) ?
+    fs.readdirSync(docsPath, { recursive: true }).filter(f => f.endsWith('.md')).length : 0;
 
-  // Load pending updates to check which docs need updating
-  const pending = loadPending();
-  const pendingDocs = new Set(pending.affectedDocs || []);
-  const hasPending = pendingDocs.size > 0;
+  // Show build status header
+  console.log('─'.repeat(40));
+  console.log(`zywiki Build`);
+  console.log('─'.repeat(40));
+  console.log(`Tracked files:    ${stats.totalFiles}`);
+  console.log(`Groups to build:  ${stats.totalGroups}`);
+  console.log(`Existing docs:    ${existingDocs}`);
+  console.log(`Provider:         ${providerName}`);
+  console.log('─'.repeat(40));
+  console.log('');
 
-  if (hasPending) {
-    console.log(`Pending updates: ${pendingDocs.size} documents\n`);
+  // Confirm if docs already exist (unless --force)
+  if (existingDocs > 0 && !options.force) {
+    console.log(`Warning: ${existingDocs} existing documents will be overwritten.`);
+    const confirmed = await confirmPrompt('Continue with full rebuild?');
+    if (!confirmed) {
+      console.log('Build cancelled.');
+      return;
+    }
+    console.log('');
   }
 
   // Filter if specified
@@ -128,7 +163,6 @@ export async function buildCommand(options = {}) {
   }
 
   let generated = 0;
-  let skipped = 0;
   let errors = 0;
 
   for (let i = 0; i < groupsToProcess.length; i++) {
@@ -136,29 +170,8 @@ export async function buildCommand(options = {}) {
     const docsDir = path.join(root, config.docsDir, group.category);
     const docFileName = sanitizeFileName(group.key) + '.md';
     const docPath = path.join(docsDir, docFileName);
-    const relativeDocPath = path.relative(root, docPath);
 
     console.log(`[${i + 1}/${groupsToProcess.length}] ${group.title}`);
-
-    // Check if this doc needs updating
-    const docExists = fs.existsSync(docPath);
-    const isPending = pendingDocs.has(relativeDocPath);
-
-    // Skip logic:
-    // - If --force: never skip
-    // - If doc doesn't exist: don't skip (create new)
-    // - If doc exists and is pending: don't skip (update)
-    // - If doc exists and not pending and no --force: skip
-    if (docExists && !options.force && !isPending) {
-      // Only show skip message if there are no pending docs (avoid noise)
-      if (!hasPending) {
-        console.log(`  → Skipped (use --force to overwrite)`);
-      } else {
-        console.log(`  → Up to date`);
-      }
-      skipped++;
-      continue;
-    }
 
     // Create directory
     if (!fs.existsSync(docsDir)) {
@@ -215,7 +228,7 @@ export async function buildCommand(options = {}) {
   }
 
   console.log('');
-  console.log(`Generated: ${generated}, Skipped: ${skipped}, Errors: ${errors}`);
+  console.log(`Generated: ${generated}, Errors: ${errors}`);
 
   // Clear pending if any documents were generated
   if (generated > 0) {
