@@ -6,3 +6,8 @@ node_modules/
 coverage/
 dist/
 .zyflow/
+
+# zywiki generated files
+.zywiki/
+zywiki/
+CLAUDE.md
