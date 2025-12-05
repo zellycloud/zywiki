@@ -7,33 +7,55 @@ import fs from 'fs';
 import path from 'path';
 import { getPaths, loadConfig } from '../core/metadata.mjs';
 import { getTechStack, generateTechStackMarkdown } from '../core/detector.mjs';
+import { output } from '../core/output.mjs';
 
 /**
- * Stack command - show detected tech stack
+ * Collect stack data
  */
-export async function stackCommand(options = {}) {
+async function collectStackData() {
   const techStack = await getTechStack();
-  const { root } = getPaths();
-  const config = loadConfig();
 
+  // Calculate percentages for languages
+  const total = techStack.languages.reduce((sum, l) => sum + l.count, 0);
+  const languages = techStack.languages.slice(0, 8).map(lang => ({
+    name: lang.name,
+    count: lang.count,
+    percentage: total > 0 ? parseFloat(((lang.count / total) * 100).toFixed(1)) : 0,
+  }));
+
+  return {
+    success: true,
+    languages,
+    frameworks: techStack.frameworks,
+    services: techStack.services,
+    summary: {
+      primaryLanguage: techStack.summary.primaryLanguage,
+      totalFrameworks: techStack.summary.totalFrameworks,
+      totalServices: techStack.summary.totalServices,
+    },
+  };
+}
+
+/**
+ * Format stack data as text
+ */
+function formatStackText(data, options = {}) {
   console.log('\nTech Stack Analysis');
   console.log('===================\n');
 
   // Languages section
-  if (techStack.languages.length > 0) {
+  if (data.languages.length > 0) {
     console.log('[Languages]');
-    const total = techStack.languages.reduce((sum, l) => sum + l.count, 0);
-    for (const lang of techStack.languages.slice(0, 8)) {
-      const percent = ((lang.count / total) * 100).toFixed(1);
-      const barFilled = Math.round(percent / 5);
+    for (const lang of data.languages) {
+      const barFilled = Math.round(lang.percentage / 5);
       const bar = '#'.repeat(barFilled) + '-'.repeat(20 - barFilled);
-      console.log(`   ${lang.name.padEnd(12)} [${bar}] ${percent}% (${lang.count} files)`);
+      console.log(`   ${lang.name.padEnd(12)} [${bar}] ${lang.percentage}% (${lang.count} files)`);
     }
     console.log('');
   }
 
   // Frameworks section
-  if (techStack.summary.totalFrameworks > 0) {
+  if (data.summary.totalFrameworks > 0) {
     console.log('[Frameworks & Libraries]');
 
     const categoryNames = {
@@ -49,7 +71,7 @@ export async function stackCommand(options = {}) {
       validation: 'Validation',
     };
 
-    for (const [category, items] of Object.entries(techStack.frameworks)) {
+    for (const [category, items] of Object.entries(data.frameworks)) {
       const name = categoryNames[category] || category;
       console.log(`   ${name}:`);
       for (const item of items) {
@@ -60,7 +82,7 @@ export async function stackCommand(options = {}) {
   }
 
   // Services section
-  if (techStack.summary.totalServices > 0) {
+  if (data.summary.totalServices > 0) {
     console.log('[Services & Integrations]');
 
     const categoryNames = {
@@ -81,7 +103,7 @@ export async function stackCommand(options = {}) {
       scheduling: 'Scheduling',
     };
 
-    for (const [category, items] of Object.entries(techStack.services)) {
+    for (const [category, items] of Object.entries(data.services)) {
       const name = categoryNames[category] || category;
       console.log(`   ${name}:`);
       for (const item of items) {
@@ -93,12 +115,32 @@ export async function stackCommand(options = {}) {
 
   // Summary
   console.log('[Summary]');
-  console.log(`   Primary Language: ${techStack.summary.primaryLanguage}`);
-  console.log(`   Total Frameworks: ${techStack.summary.totalFrameworks}`);
-  console.log(`   Total Services:   ${techStack.summary.totalServices}`);
+  console.log(`   Primary Language: ${data.summary.primaryLanguage}`);
+  console.log(`   Total Frameworks: ${data.summary.totalFrameworks}`);
+  console.log(`   Total Services:   ${data.summary.totalServices}`);
+  console.log('');
+}
+
+/**
+ * Stack command - show detected tech stack
+ */
+export async function stackCommand(options = {}) {
+  const data = await collectStackData();
+  const { root } = getPaths();
+  const config = loadConfig();
+
+  // JSON output mode
+  if (options.json) {
+    output(data, options, () => {});
+    return;
+  }
+
+  // Text output mode
+  formatStackText(data);
 
   // Generate markdown if requested
   if (options.output || options.save) {
+    const techStack = await getTechStack();
     const docsDir = path.join(root, config.docsDir);
     const outputPath = options.output || path.join(docsDir, 'architecture', 'tech-stack.md');
 
@@ -110,8 +152,6 @@ export async function stackCommand(options = {}) {
 
     const markdown = generateTechStackMarkdown(techStack);
     fs.writeFileSync(outputPath, markdown);
-    console.log(`\nTech stack documentation saved to: ${outputPath}`);
+    console.log(`Tech stack documentation saved to: ${outputPath}`);
   }
-
-  console.log('');
 }

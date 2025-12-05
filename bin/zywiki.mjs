@@ -42,6 +42,7 @@ program
   .option('--force', 'Skip confirmation and rebuild all')
   .option('--filter <keyword>', 'Filter groups by keyword')
   .option('--lang <code>', 'Language (ko, en, ja, zh, es, fr, etc.)', 'ko')
+  .option('--json', 'Output as JSON')
   .action(buildCommand);
 
 program
@@ -53,6 +54,7 @@ program
 program
   .command('status')
   .description('Show current tracking status')
+  .option('--json', 'Output as JSON')
   .action(statusCommand);
 
 program
@@ -66,6 +68,7 @@ program
   .command('stack')
   .description('Analyze and display project tech stack')
   .option('--save', 'Save tech stack documentation')
+  .option('--json', 'Output as JSON')
   .action(stackCommand);
 
 program.parse();

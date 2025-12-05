@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-12-05
+
+### Added
+- **JSON Output**: All main CLI commands now support `--json` flag for structured output
+  - `zywiki status --json`: Structured status information with stats, tech stack, and pending updates
+  - `zywiki build --json`: Build results report with success/error status per document
+  - `zywiki stack --json`: Tech stack information in structured format
+- **Automatic Manifest Generation**: `.zywiki/manifest.json` is now generated after successful builds
+  - Document-source file mappings
+  - Coverage percentage calculation
+  - Last modified timestamps
+- **TypeScript Type Definitions**: Added `src/types/output.d.ts` with JSON output schemas
+  - `StatusOutput`, `BuildOutput`, `StackOutput`, `Manifest` interfaces
+
+### Changed
+- **Output Module**: Added `src/core/output.mjs` utility for consistent JSON/text output handling
+- **Build Command**: Suppresses interactive prompts and progress spinner when `--json` flag is used
+
 ## [0.3.0] - 2025-12-04
 
 ### Added

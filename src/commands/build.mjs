@@ -16,6 +16,7 @@ import { clearPending } from '../core/detector.mjs';
 import { generateDocPrompt } from '../core/ai-generator.mjs';
 import { callGeminiAPI } from '../core/gemini.mjs';
 import { matchesPattern, getLineCount } from '../core/parser.mjs';
+import { output } from '../core/output.mjs';
 
 /**
  * Auto-scan and add files based on sourcePatterns
@@ -85,19 +86,42 @@ async function confirmPrompt(message) {
 export async function buildCommand(options = {}) {
   const config = loadConfig();
   const { root } = getPaths();
+  const isJson = options.json;
+  const buildStartTime = Date.now();
+
+  // Logging helper (suppress in JSON mode)
+  const log = (...args) => {
+    if (!isJson) console.log(...args);
+  };
 
   // Auto-scan files first
-  console.log('Scanning for source files...');
+  log('Scanning for source files...');
   const addedCount = await autoScanFiles(config, root);
   if (addedCount > 0) {
-    console.log(`  Added ${addedCount} new files\n`);
+    log(`  Added ${addedCount} new files\n`);
   }
 
   const metadata = loadMetadata();
 
   if (metadata.snippets.length === 0) {
-    console.log('No source files found matching patterns in config.');
-    console.log('Check .zywiki/config.json sourcePatterns.');
+    const errorData = {
+      success: false,
+      error: 'No source files found matching patterns in config.',
+      provider: config.ai?.provider || 'claude',
+      totalGroups: 0,
+      generated: 0,
+      errors: 0,
+      skipped: 0,
+      totalDurationMs: Date.now() - buildStartTime,
+      results: [],
+    };
+
+    if (isJson) {
+      output(errorData, options, () => {});
+    } else {
+      console.log('No source files found matching patterns in config.');
+      console.log('Check .zywiki/config.json sourcePatterns.');
+    }
     return;
   }
 
@@ -109,15 +133,47 @@ export async function buildCommand(options = {}) {
   if (provider === 'claude') {
     const claudeAvailable = await checkClaudeCLI();
     if (!claudeAvailable) {
-      console.error('Error: Claude CLI not found.');
-      console.log('Install: https://claude.ai/code');
+      const errorData = {
+        success: false,
+        error: 'Claude CLI not found. Install: https://claude.ai/code',
+        provider,
+        totalGroups: 0,
+        generated: 0,
+        errors: 0,
+        skipped: 0,
+        totalDurationMs: Date.now() - buildStartTime,
+        results: [],
+      };
+
+      if (isJson) {
+        output(errorData, options, () => {});
+      } else {
+        console.error('Error: Claude CLI not found.');
+        console.log('Install: https://claude.ai/code');
+      }
       return;
     }
   } else if (provider === 'gemini') {
     const apiKey = config.ai?.apiKey || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('Error: GEMINI_API_KEY not found.');
-      console.log('Set it in environment or run "zywiki init" again.');
+      const errorData = {
+        success: false,
+        error: 'GEMINI_API_KEY not found.',
+        provider,
+        totalGroups: 0,
+        generated: 0,
+        errors: 0,
+        skipped: 0,
+        totalDurationMs: Date.now() - buildStartTime,
+        results: [],
+      };
+
+      if (isJson) {
+        output(errorData, options, () => {});
+      } else {
+        console.error('Error: GEMINI_API_KEY not found.');
+        console.log('Set it in environment or run "zywiki init" again.');
+      }
       return;
     }
   }
@@ -131,26 +187,26 @@ export async function buildCommand(options = {}) {
   const existingDocs = fs.existsSync(docsPath) ?
     fs.readdirSync(docsPath, { recursive: true }).filter(f => f.endsWith('.md')).length : 0;
 
-  // Show build status header
-  console.log('─'.repeat(40));
-  console.log(`zywiki Build`);
-  console.log('─'.repeat(40));
-  console.log(`Tracked files:    ${stats.totalFiles}`);
-  console.log(`Groups to build:  ${stats.totalGroups}`);
-  console.log(`Existing docs:    ${existingDocs}`);
-  console.log(`Provider:         ${providerName}`);
-  console.log('─'.repeat(40));
-  console.log('');
+  // Show build status header (text mode only)
+  log('─'.repeat(40));
+  log(`zywiki Build`);
+  log('─'.repeat(40));
+  log(`Tracked files:    ${stats.totalFiles}`);
+  log(`Groups to build:  ${stats.totalGroups}`);
+  log(`Existing docs:    ${existingDocs}`);
+  log(`Provider:         ${providerName}`);
+  log('─'.repeat(40));
+  log('');
 
-  // Confirm if docs already exist (unless --force)
-  if (existingDocs > 0 && !options.force) {
-    console.log(`Warning: ${existingDocs} existing documents will be overwritten.`);
+  // Confirm if docs already exist (unless --force or --json)
+  if (existingDocs > 0 && !options.force && !isJson) {
+    log(`Warning: ${existingDocs} existing documents will be overwritten.`);
     const confirmed = await confirmPrompt('Continue with full rebuild?');
     if (!confirmed) {
-      console.log('Build cancelled.');
+      log('Build cancelled.');
       return;
     }
-    console.log('');
+    log('');
   }
 
   // Filter if specified
@@ -159,19 +215,22 @@ export async function buildCommand(options = {}) {
     groupsToProcess = groups.filter(g =>
       g.key.toLowerCase().includes(options.filter.toLowerCase())
     );
-    console.log(`Filtered: ${groupsToProcess.length} groups\n`);
+    log(`Filtered: ${groupsToProcess.length} groups\n`);
   }
 
   let generated = 0;
   let errors = 0;
+  let skipped = 0;
+  const results = [];
 
   for (let i = 0; i < groupsToProcess.length; i++) {
     const group = groupsToProcess[i];
     const docsDir = path.join(root, config.docsDir, group.category);
     const docFileName = sanitizeFileName(group.key) + '.md';
     const docPath = path.join(docsDir, docFileName);
+    const relativePath = path.relative(root, docPath);
 
-    console.log(`[${i + 1}/${groupsToProcess.length}] ${group.title}`);
+    log(`[${i + 1}/${groupsToProcess.length}] ${group.title}`);
 
     // Create directory
     if (!fs.existsSync(docsDir)) {
@@ -181,13 +240,17 @@ export async function buildCommand(options = {}) {
     const prompt = generateDocPrompt(group, { root, language: options.lang || config.language || 'en' });
     const startTime = Date.now();
 
-    // Progress spinner
+    // Progress spinner (text mode only)
     const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     let spinIdx = 0;
-    const interval = setInterval(() => {
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
-      process.stdout.write(`\r  ${spinner[spinIdx++ % spinner.length]} Generating... ${elapsed}s`);
-    }, 100);
+    let interval;
+
+    if (!isJson) {
+      interval = setInterval(() => {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
+        process.stdout.write(`\r  ${spinner[spinIdx++ % spinner.length]} Generating... ${elapsed}s`);
+      }, 100);
+    }
 
     try {
       // Call AI provider
@@ -201,42 +264,92 @@ export async function buildCommand(options = {}) {
         content = await callClaudeCLI(prompt);
       }
 
-      clearInterval(interval);
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      if (!isJson) clearInterval(interval);
+      const elapsed = Date.now() - startTime;
 
       fs.writeFileSync(docPath, content);
       addDocument(docPath, group.files.map(f => f.path));
 
-      console.log(`\r  ✓ Done (${elapsed}s): ${path.relative(root, docPath)}                    `);
+      log(`\r  ✓ Done (${(elapsed / 1000).toFixed(1)}s): ${relativePath}                    `);
       generated++;
+
+      results.push({
+        group: group.key,
+        title: group.title,
+        path: relativePath,
+        status: 'success',
+        durationMs: elapsed,
+      });
 
       // Rate limit delay for Gemini (10 RPM = 6 sec between requests)
       if (provider === 'gemini' && i < groupsToProcess.length - 1) {
         await new Promise(r => setTimeout(r, 6500)); // 6.5 sec delay
       }
     } catch (error) {
-      clearInterval(interval);
-      console.log(`\r  ✗ Error: ${error.message}                    `);
+      if (!isJson) clearInterval(interval);
+      const elapsed = Date.now() - startTime;
+
+      log(`\r  ✗ Error: ${error.message}                    `);
       errors++;
+
+      results.push({
+        group: group.key,
+        title: group.title,
+        path: relativePath,
+        status: 'error',
+        error: error.message,
+        durationMs: elapsed,
+      });
 
       // On rate limit error, wait longer and continue
       if (provider === 'gemini' && error.message.includes('rate')) {
-        console.log('  → Waiting 60s for rate limit...');
+        log('  → Waiting 60s for rate limit...');
         await new Promise(r => setTimeout(r, 60000));
       }
     }
   }
 
-  console.log('');
-  console.log(`Generated: ${generated}, Errors: ${errors}`);
+  const totalDurationMs = Date.now() - buildStartTime;
 
-  // Clear pending if any documents were generated
+  // Output results
+  const buildData = {
+    success: errors === 0,
+    provider,
+    totalGroups: groupsToProcess.length,
+    generated,
+    errors,
+    skipped,
+    totalDurationMs,
+    results,
+  };
+
+  if (isJson) {
+    output(buildData, options, () => {});
+  } else {
+    console.log('');
+    console.log(`Generated: ${generated}, Errors: ${errors}`);
+
+    // Clear pending if any documents were generated
+    if (generated > 0) {
+      clearPending();
+      console.log('Pending updates cleared.');
+
+      // Auto-index for RAG search
+      await autoIndex();
+    }
+  }
+
+  // Generate manifest if successful
   if (generated > 0) {
-    clearPending();
-    console.log('Pending updates cleared.');
-
-    // Auto-index for RAG search
-    await autoIndex();
+    try {
+      const { generateManifest } = await import('../core/manifest.mjs');
+      await generateManifest();
+      if (!isJson) {
+        console.log('Manifest updated.');
+      }
+    } catch (e) {
+      // Manifest module not yet implemented, skip
+    }
   }
 }
 

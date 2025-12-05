@@ -3,50 +3,69 @@
  * Show tracking status with tech stack info
  */
 
-import { getStats, loadMetadata, getPaths } from '../core/metadata.mjs';
+import { getStats } from '../core/metadata.mjs';
 import { loadPending, getTechStack } from '../core/detector.mjs';
+import { output } from '../core/output.mjs';
 
 /**
- * Status command
+ * Collect status data
  */
-export async function statusCommand() {
+async function collectStatusData() {
   const stats = getStats();
   const pending = loadPending();
   const techStack = await getTechStack();
 
+  return {
+    success: true,
+    stats: {
+      trackedFiles: stats.snippets,
+      documents: stats.documents,
+      pendingUpdates: stats.pending,
+    },
+    techStack: {
+      primaryLanguage: techStack.summary.primaryLanguage || 'unknown',
+      totalFrameworks: techStack.summary.totalFrameworks,
+      totalServices: techStack.summary.totalServices,
+      topLanguages: techStack.languages.slice(0, 3).map(l => l.name),
+    },
+    pending: {
+      changedFiles: pending.changedFiles || [],
+      affectedDocs: pending.affectedDocs || [],
+    },
+  };
+}
+
+/**
+ * Format status data as text
+ */
+function formatStatusText(data) {
   console.log('\nzywiki Status');
   console.log('==============');
-  console.log(`Tracked files:    ${stats.snippets}`);
-  console.log(`Documents:        ${stats.documents}`);
-  console.log(`Pending updates:  ${stats.pending}`);
+  console.log(`Tracked files:    ${data.stats.trackedFiles}`);
+  console.log(`Documents:        ${data.stats.documents}`);
+  console.log(`Pending updates:  ${data.stats.pendingUpdates}`);
 
   // Tech stack summary
-  if (techStack.summary.totalFrameworks > 0 || techStack.summary.totalServices > 0) {
+  if (data.techStack.totalFrameworks > 0 || data.techStack.totalServices > 0) {
     console.log('\n--- Tech Stack ---');
 
-    // Languages
-    if (techStack.languages.length > 0) {
-      const top3 = techStack.languages.slice(0, 3).map(l => l.name).join(', ');
-      console.log(`Languages:        ${top3}`);
+    if (data.techStack.topLanguages.length > 0) {
+      console.log(`Languages:        ${data.techStack.topLanguages.join(', ')}`);
     }
 
-    // Frameworks count by category
-    if (techStack.summary.totalFrameworks > 0) {
-      const frameworkCategories = Object.keys(techStack.frameworks).length;
-      console.log(`Frameworks:       ${techStack.summary.totalFrameworks} (${frameworkCategories} categories)`);
+    if (data.techStack.totalFrameworks > 0) {
+      console.log(`Frameworks:       ${data.techStack.totalFrameworks}`);
     }
 
-    // Services count by category
-    if (techStack.summary.totalServices > 0) {
-      const serviceCategories = Object.keys(techStack.services).length;
-      console.log(`Services:         ${techStack.summary.totalServices} (${serviceCategories} categories)`);
+    if (data.techStack.totalServices > 0) {
+      console.log(`Services:         ${data.techStack.totalServices}`);
     }
   }
 
   // Show pending summary (limit to 5 items)
-  if (pending.changedFiles && pending.changedFiles.length > 0) {
+  if (data.pending.changedFiles.length > 0) {
     const maxShow = 5;
-    const files = pending.changedFiles;
+    const files = data.pending.changedFiles;
     console.log(`\nPending changes (${files.length} files):`);
     files.slice(0, maxShow).forEach(f => console.log(`  - ${f}`));
     if (files.length > maxShow) {
@@ -54,9 +73,9 @@ export async function statusCommand() {
     }
   }
 
-  if (pending.affectedDocs && pending.affectedDocs.length > 0) {
+  if (data.pending.affectedDocs.length > 0) {
     const maxShow = 5;
-    const docs = pending.affectedDocs;
+    const docs = data.pending.affectedDocs;
     console.log(`\nAffected documents (${docs.length} docs):`);
     docs.slice(0, maxShow).forEach(d => console.log(`  - ${d}`));
     if (docs.length > maxShow) {
@@ -64,9 +83,17 @@ export async function statusCommand() {
     }
   }
 
-  if (stats.pending > 0) {
+  if (data.stats.pendingUpdates > 0) {
     console.log('\nRun "zywiki build" to generate missing docs.');
   }
 
   console.log('');
+}
+
+/**
+ * Status command
+ */
+export async function statusCommand(options = {}) {
+  const data = await collectStatusData();
+  output(data, options, formatStatusText);
 }

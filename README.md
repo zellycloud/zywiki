@@ -37,11 +37,14 @@ zywiki build
 |---------|-------------|
 | `zywiki init` | Initialize documentation structure |
 | `zywiki build` | Generate all documentation (prompts if docs exist) |
+| `zywiki build --json` | Output build results as JSON |
 | `zywiki build --force` | Skip confirmation and rebuild all |
 | `zywiki update` | Update only pending documents (changed source files) |
 | `zywiki status` | Show tracking status with tech summary |
+| `zywiki status --json` | Output status as JSON |
 | `zywiki search <query>` | Search wiki documents (semantic + keyword) |
 | `zywiki stack` | Analyze and display project tech stack |
+| `zywiki stack --json` | Output tech stack as JSON |
 
 ## Tech Stack Detection
 
@@ -152,7 +155,69 @@ zywiki init --git
 3. Next Claude Code session automatically picks up the flag
 4. Run `zywiki build` to update documentation
 
+## JSON Output
+
+All main commands support `--json` flag for structured output, making ZyWiki AI-agent friendly:
+
+```bash
+# Status as JSON
+zywiki status --json
+
+# Build with JSON output (skips confirmation, no spinner)
+zywiki build --json
+
+# Tech stack as JSON
+zywiki stack --json
+```
+
+### Example JSON Output
+
+```json
+{
+  "version": "0.4.0",
+  "timestamp": "2025-01-01T00:00:00.000Z",
+  "success": true,
+  "stats": {
+    "trackedFiles": 25,
+    "documents": 8,
+    "pendingUpdates": 3
+  }
+}
+```
+
+### Manifest File
+
+Build command automatically generates `.zywiki/manifest.json` with document-source mappings:
+
+```json
+{
+  "version": "0.4.0",
+  "generatedAt": "2025-01-01T00:00:00.000Z",
+  "stats": {
+    "trackedFiles": 25,
+    "documents": 8,
+    "coveragePercent": 32.0
+  },
+  "documents": [
+    {
+      "path": "zywiki/features/auth.md",
+      "sources": ["src/auth/login.ts", "src/auth/logout.ts"]
+    }
+  ]
+}
+```
+
 ## Changelog
+
+### v0.4.0
+- **New**: JSON output for all CLI commands (`--json` flag)
+  - `zywiki status --json`: Structured status information
+  - `zywiki build --json`: Build results report
+  - `zywiki stack --json`: Tech stack information
+- **New**: Automatic manifest generation (`.zywiki/manifest.json`)
+  - Document-source file mappings
+  - Coverage percentage calculation
+- **New**: TypeScript type definitions for JSON output schemas
 
 ### v0.3.0
 - **New**: RAG Search - Local semantic search using Orama + Transformers.js
