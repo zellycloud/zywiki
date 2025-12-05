@@ -1,101 +1,72 @@
 # Tasks: add-json-output
 
-## Overview
-
 ZyWiki v0.4.0 - JSON 출력 지원
 
-## Task Groups
+## Phase 1: 기반 작업
 
-### Group 1: 기반 작업
+- [x] `src/core/output.mjs` 유틸리티 생성
+  - [x] JSON/텍스트 출력 분기 함수
+  - [x] 타임스탬프, 버전 필드 자동 추가
+- [x] JSON 출력 스키마 TypeScript 정의 (문서용)
+  - [x] `StatusOutput`, `BuildOutput`, `StackOutput`, `Manifest` 인터페이스
 
-- [x] 1-1. `src/core/output.mjs` 유틸리티 생성
-  - JSON/텍스트 출력 분기 함수
-  - 타임스탬프, 버전 필드 자동 추가
+## Phase 2: status --json
 
-- [x] 1-2. JSON 출력 스키마 TypeScript 정의 (문서용)
-  - `StatusOutput`, `BuildOutput`, `StackOutput`, `Manifest` 인터페이스
+- [x] `bin/zywiki.mjs`에 `--json` 옵션 추가
+  - [x] `status` 명령에 `.option('--json', 'Output as JSON')` 추가
+- [x] `src/commands/status.mjs` 리팩토링
+  - [x] 결과를 객체로 수집
+  - [x] `output()` 함수로 출력 분기
+  - [x] `StatusOutput` 스키마 준수
+- [x] status --json 테스트
+  - [x] JSON 파싱 가능 확인
+  - [x] 필수 필드 존재 확인
 
-### Group 2: status --json
+## Phase 3: build --json
 
-- [x] 2-1. `bin/zywiki.mjs`에 `--json` 옵션 추가
-  - `status` 명령에 `.option('--json', 'Output as JSON')` 추가
+- [x] `bin/zywiki.mjs`에 `--json` 옵션 추가
+  - [x] `build` 명령에 옵션 추가
+- [x] `src/commands/build.mjs` 리팩토링
+  - [x] 빌드 결과를 배열로 수집
+  - [x] 성공/실패/스킵 상태 추적
+  - [x] 소요 시간 측정
+  - [x] JSON 출력 시 progress spinner 비활성화
+- [x] build --json 테스트
+  - [x] 빌드 결과 JSON 파싱 확인
+  - [x] success/error 상태 확인
 
-- [x] 2-2. `src/commands/status.mjs` 리팩토링
-  - 결과를 객체로 수집
-  - `output()` 함수로 출력 분기
-  - `StatusOutput` 스키마 준수
+## Phase 4: stack --json
 
-- [x] 2-3. status --json 테스트
-  - JSON 파싱 가능 확인
-  - 필수 필드 존재 확인
+- [x] `bin/zywiki.mjs`에 `--json` 옵션 추가
+  - [x] `stack` 명령에 옵션 추가
+- [x] `src/commands/stack.mjs` 리팩토링
+  - [x] 기술 스택 정보를 객체로 반환
+  - [x] `StackOutput` 스키마 준수
+- [x] stack --json 테스트
 
-### Group 3: build --json
+## Phase 5: 매니페스트 생성
 
-- [x] 3-1. `bin/zywiki.mjs`에 `--json` 옵션 추가
-  - `build` 명령에 옵션 추가
+- [x] `src/core/manifest.mjs` 생성
+  - [x] `generateManifest()` 함수
+  - [x] 문서-소스 매핑 정보 수집
+  - [x] 커버리지 계산
+- [x] build 완료 시 매니페스트 자동 생성
+  - [x] `.zywiki/manifest.json` 파일 생성
+  - [x] 빌드 성공 시에만 업데이트
+- [x] 매니페스트 테스트
+  - [x] 빌드 후 파일 존재 확인
+  - [x] 스키마 유효성 검증
 
-- [x] 3-2. `src/commands/build.mjs` 리팩토링
-  - 빌드 결과를 배열로 수집
-  - 성공/실패/스킵 상태 추적
-  - 소요 시간 측정
-  - JSON 출력 시 progress spinner 비활성화
+## Phase 6: 문서화 및 릴리스
 
-- [x] 3-3. build --json 테스트
-  - 빌드 결과 JSON 파싱 확인
-  - success/error 상태 확인
-
-### Group 4: stack --json
-
-- [x] 4-1. `bin/zywiki.mjs`에 `--json` 옵션 추가
-  - `stack` 명령에 옵션 추가
-
-- [x] 4-2. `src/commands/stack.mjs` 리팩토링
-  - 기술 스택 정보를 객체로 반환
-  - `StackOutput` 스키마 준수
-
-- [x] 4-3. stack --json 테스트
-
-### Group 5: 매니페스트 생성
-
-- [x] 5-1. `src/core/manifest.mjs` 생성
-  - `generateManifest()` 함수
-  - 문서-소스 매핑 정보 수집
-  - 커버리지 계산
-
-- [x] 5-2. build 완료 시 매니페스트 자동 생성
-  - `.zywiki/manifest.json` 파일 생성
-  - 빌드 성공 시에만 업데이트
-
-- [x] 5-3. 매니페스트 테스트
-  - 빌드 후 파일 존재 확인
-  - 스키마 유효성 검증
-
-### Group 6: 문서화 및 릴리스
-
-- [x] 6-1. README.md 업데이트
-  - `--json` 옵션 문서화
-  - JSON 출력 예시 추가
-
-- [x] 6-2. CHANGELOG.md 업데이트
-  - v0.4.0 변경사항 기록
-
-- [x] 6-3. package.json 버전 업데이트
-  - 0.3.x → 0.4.0
-
-## Dependencies
-
-```
-Group 1 (기반) → Group 2, 3, 4, 5 (병렬 가능)
-Group 2-5 완료 → Group 6 (문서화)
-```
-
-## Validation
-
-각 그룹 완료 시:
-1. `npm run lint` 통과
-2. 해당 명령어 `--json` 실행하여 유효한 JSON 출력 확인
-3. 기존 텍스트 출력 동작 유지 확인
-
-## Completed
-
-모든 태스크 완료됨 (2025-12-05)
+- [x] README.md 업데이트
+  - [x] `--json` 옵션 문서화
+  - [x] JSON 출력 예시 추가
+- [x] CHANGELOG.md 업데이트
+  - [x] v0.4.0 변경사항 기록
+- [x] package.json 버전 업데이트
+  - [x] 0.3.x → 0.4.0
+- [x] npm publish: `zywiki@0.4.0`
+- [x] GitHub release
+- [x] Global install 업데이트
+- [x] zyflow 로컬 링크 갱신
